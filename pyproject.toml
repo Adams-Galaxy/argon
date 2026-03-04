@@ -1,56 +1,51 @@
 [build-system]
-requires = ["setuptools>=61", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
 
 [project]
 name = "argon"
 version = "0.1.0"
-description = "Modern, fully Pythonic hierarchical CLI framework (hierarchical groups, option inference, aliases, hooks, global options, REPL, completion)."
+description = "Typer-inspired, shell-first CLI framework for Rich and prompt_toolkit."
 readme = "README.md"
 license = { file = "LICENSE" }
-authors = [
-  { name = "Adam Williams" }
-]
-requires-python = ">=3.10"
-keywords = ["cli", "command-line", "parser", "framework", "commands", "tooling"]
+authors = [{ name = "Adam Williams" }]
+requires-python = ">=3.11"
+dependencies = ["rich>=13.7", "prompt_toolkit>=3.0.43"]
+keywords = ["cli", "shell", "terminal", "rich", "prompt-toolkit", "typer"]
 classifiers = [
   "Development Status :: 3 - Alpha",
   "Intended Audience :: Developers",
   "License :: OSI Approved :: MIT License",
   "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
   "Typing :: Typed",
-  "Topic :: Software Development :: Libraries",
   "Topic :: Software Development :: Libraries :: Python Modules",
   "Topic :: Utilities",
 ]
 
-# Pure stdlib; no install dependencies.
-dependencies = []
-
 [project.optional-dependencies]
-dev = [
-  "pytest>=8.0",
-  "ruff>=0.5.0",
-  "mypy>=1.8",
-]
+dev = ["mypy>=1.10", "pytest>=8.2", "ruff>=0.6"]
 
 [project.urls]
 Homepage = "https://github.com/Adams-Galaxy/argon"
 Repository = "https://github.com/Adams-Galaxy/argon"
 Issues = "https://github.com/Adams-Galaxy/argon/issues"
 
-[tool.setuptools.package-data]
-"argon" = ["py.typed"]
-
-[tool.setuptools.packages.find]
-include = ["argon*"]
+[tool.hatch.build.targets.wheel]
+packages = ["src/argon"]
 
 [tool.ruff]
 line-length = 100
+target-version = "py311"
+
+[tool.pytest.ini_options]
+pythonpath = ["src", "."]
+testpaths = ["tests"]
+norecursedirs = [".git", ".pytest_cache", ".mypy_cache", ".ruff_cache"]
 
 [tool.mypy]
+python_version = "3.11"
+packages = ["argon"]
 strict = false

@@ -1,0 +1,65 @@
+{
+  "shell": {
+    "history": true,
+    "mouse_support": false,
+    "history_path": ".argon-demo-history",
+    "live": {
+      "spinner": "dots",
+      "show_elapsed": true,
+      "success_symbol": "✔",
+      "error_symbol": "✖",
+      "status_final": "success",
+      "status_failed_final": "error",
+      "awaiting_final": "clear",
+      "awaiting_failed_final": "error",
+      "progress_transient": false
+    },
+    "prompt": {
+      "template": "[argon.prompt.brand]{app.name}[/argon.prompt.brand]{session.workspace_badge}{session.profile_badge}{system.time_badge}\n[argon.prompt.symbol]>[/argon.prompt.symbol] "
+    }
+  },
+  "theme": {
+    "base": {
+      "name": "demo-base",
+      "styles": {
+        "argon.surface.base": "white on black",
+        "argon.surface.panel": "white on black",
+        "argon.surface.muted": "bright_black on black",
+        "argon.selection.active": "bold black on bright_yellow",
+        "argon.selection.inactive": "black on bright_black",
+        "argon.chrome.border": "bright_black",
+        "argon.text.primary": "bright_white",
+        "argon.text.muted": "bright_black",
+        "argon.text.title": "bold bright_yellow",
+        "argon.text.heading": "bold bright_cyan",
+        "argon.feedback.success": "bold bright_green",
+        "argon.feedback.warning": "bold bright_yellow",
+        "argon.feedback.error": "bold bright_red",
+        "argon.shell.command": "bold bright_yellow",
+        "argon.shell.option": "bright_cyan",
+        "argon.shell.value": "{argon.text.primary}",
+        "argon.shell.string": "bright_green",
+        "argon.shell.number": "bright_magenta",
+        "argon.shell.error": "{argon.feedback.error}",
+        "argon.prompt.brand": "{argon.shell.command}",
+        "argon.prompt.context": "bright_cyan",
+        "argon.prompt.meta": "{argon.text.muted}",
+        "argon.prompt.symbol": "bold bright_white",
+        "argon.live.spinner": "bright_yellow",
+        "argon.live.message": "{argon.text.primary}",
+        "argon.live.elapsed": "{argon.text.muted}",
+        "argon.progress.description": "bright_white",
+        "argon.progress.bar": "bright_cyan",
+        "argon.progress.complete": "bold bright_green",
+        "argon.progress.remaining": "{argon.text.muted}",
+        "argon.progress.percentage": "bright_yellow",
+        "argon.ptk.menu": "{argon.surface.base}",
+        "argon.ptk.menu.current": "{argon.selection.active}",
+        "argon.ptk.menu.meta": "{argon.surface.muted}",
+        "argon.ptk.menu.meta.current": "{argon.selection.inactive}",
+        "argon.ptk.scrollbar": "bright_black on black",
+        "argon.ptk.scrollbar.dim": "black on black"
+      }
+    }
+  }
+}

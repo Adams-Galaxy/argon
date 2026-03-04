@@ -1,165 +1,138 @@
 # Argon
 
-Modern, fully Pythonic hierarchical CLI framework.
+Argon is a Typer-inspired, shell-first CLI framework built around Rich and
+prompt_toolkit.
 
-Features:
-- Hierarchical command groups and nested commands
-- Decorator-based registration (`@cli.command`, `cli.group("..."))`)
-- Automatic option inference from function defaults
-- Aliases for commands
-- Global options (parsed before command path)
-- Context injection (`ctx` parameter)
-- Middleware, pre & post hooks
-- Colorized help output
-- REPL and shell completion generation
-- Strict mode for unknown options (`allow_free_options=False`)
+It keeps a familiar decorator-based authoring model while treating interactive
+terminal UX as a first-class runtime concern.
 
-> Requires Python 3.10 or newer.
+## Status
 
-## Quick Start
+Argon is currently being rebuilt around the contract in
+[`docs/contract.md`](docs/contract.md).
+
+The stable theme and formatter namespace is documented in
+[`docs/theming.md`](docs/theming.md).
+
+## Example
+
 ```python
-from argon import Interface
+from typing import Annotated
 
-cli = Interface(name="demo", version="0.1.0")
+import argon
 
-@cli.command(help="Greet someone", aliases=["hi"])  # --times inferred
-def greet(ctx, name: str, times: int = 1):
-    for i in range(times):
-        ctx.emit(f"[{i+1}] Hello {name}")
+app = argon.App(name="demo", help="Shell-first CLI")
+
+
+@app.command()
+def greet(
+    ctx: argon.Context,
+    name: Annotated[str, argon.Argument(help="Who to greet")],
+    times: Annotated[int, argon.Option("--times", "-t", help="Repeat count")] = 1,
+) -> None:
+    for _ in range(times):
+        ctx.out.text(f"Hello {name}")
+
 
 if __name__ == "__main__":
-    cli.run_argv()
+    app()
 ```
 
-Output:
-```
-[1] Hello world
-[2] Hello world
-[3] Hello world
-```
-
-## Run from `sys.argv`
-
-`Interface.run_argv()` consumes `sys.argv[1:]` (or a custom sequence) so your CLI can act like a regular executable:
+You can also run the same command graph interactively:
 
 ```python
-if __name__ == "__main__":
-    cli.run_argv()  # reads sys.argv[1:]
+app.run_shell()
 ```
 
-Pass in an explicit sequence for testing:
+Prompts and shell behavior can be configured at the app layer:
 
 ```python
-cli.run_argv(["greet", "team", "--times", "5"])
-```
-```
-
-## Groups & Aliases
-```python
-data = cli.group("data", help="Data ops")
-
-@data.command(help="Summarize numbers", aliases=["stats"])
-def summary(ctx, *values: str):
-    nums = [float(v) for v in values]
-    if not nums:
-        ctx.emit("none")
-        return
-    ctx.emit(f"min={min(nums)} max={max(nums)} avg={sum(nums)/len(nums):.2f}")
-```
-Use:
-```
-cli.run_line("data summary 1 2 3 4")
-cli.run_line("data stats 5 6 7")  # alias
-```
-
-## Global Options
-```python
-cli.add_global_option(
-    "verbose", flags=["-v", "--verbose"], is_flag=True, help="Verbose logging"
+app = argon.App(
+    name="demo",
+    theme=argon.default_theme().with_overrides(
+        "brand",
+        {
+            "argon.shell.command": "bold bright_yellow",
+            "argon.prompt.brand": "{argon.shell.command}",
+            "argon.ptk.menu.current": "bold black on bright_yellow",
+        },
+    ),
+    shell_config=argon.ShellConfig(
+        history_path=".demo-history",
+        prompt=argon.PromptConfig(
+            template="[argon.prompt.brand]{app.name}[/argon.prompt.brand]{system.time_badge} [argon.prompt.symbol]>[/argon.prompt.symbol] ",
+            tokens={
+                "system.time_badge": lambda formatter: f" {formatter.resolve_token('system.time')}",
+            },
+        ),
+    ),
 )
 ```
-Global options must appear before the command path:
-```
-cli.run_line("-v data summary 1 2 3")
-```
-Access inside a command via context:
+
+Static shell/theme config can also be loaded from JSON and then extended in
+Python with dynamic prompt tokens:
+
 ```python
-@cli.command()
-def action(ctx):
-    if ctx.global_options.verbose:
-        print("verbose on")
+config = argon.AppConfig.from_file("examples/demo.config.json")
+
+app = argon.App(
+    name="demo",
+    theme=config.theme,
+    shell_config=config.shell.with_prompt_tokens(
+        {
+            "system.time_badge": lambda formatter: f" {formatter.resolve_token('system.time')}",
+        }
+    ),
+)
 ```
 
-## Context Injection
-Add a `ctx` parameter to receive runtime context (CLI instance, command spec, parsed args, global options):
+Argon also has first-class live Rich output on `ctx.out` for shell-facing
+commands:
+
 ```python
-@cli.command()
-def login(ctx, user: str, password: str):
-    if ctx.global_options.get("verbose"):
-        print("authenticating...")
+@app.command()
+async def deploy(ctx: argon.Context) -> None:
+    await ctx.out.awaiting(run_deploy(), message="Deploying")
+
+@app.command()
+def build(ctx: argon.Context) -> None:
+    with ctx.out.progress() as progress:
+        task_id = progress.add_task("Building", total=5)
+        ...
+
+@app.command()
+async def fanout(ctx: argon.Context) -> None:
+    await ctx.out.gather(
+        {
+            "index": index_job(),
+            "publish": publish_job(),
+        }
+    )
 ```
 
-## Strict vs Free Options
-Unknown options are accepted and auto-cast by default. Disable with:
+Live completion behavior can come from config defaults or from the command
+result itself:
+
 ```python
-cli = Interface(allow_free_options=False)
-```
-Then an unknown option will raise `CommandUsageError`.
-
-## REPL
-```python
-cli.repl()
-```
-Type `help` inside to list commands.
-
-## Async Commands & Shell
-Define async commands with `async def` and use `AsyncShell` (or `await cli.run_line_async(...)`).
-```python
-from argon import Interface, AsyncShell
-import asyncio
-
-cli = Interface()
-
-@cli.command()
-async def fetch(url: str):
-    # simulate async I/O
-    await asyncio.sleep(0.1)
-    print(f"fetched {url}")
-
-async def main():
-    await cli.run_line_async("fetch https://example.com")
-    term = AsyncShell(cli)
-    await term.loop()
-
-asyncio.run(main())
+result = await ctx.out.awaiting(
+    probe(),
+    message="Probing service",
+    final="success",
+    resolve_final=lambda value: "success" if value == "healthy" else "error",
+)
 ```
 
-## Completion Script
-```python
-print(cli.generate_completion())
-```
-Add the output to your shell configuration.
+## Reference Demo
 
-## Plugin Loading
-Entry-point group usage (define in other packages):
-```python
-cli.load_plugins("argon.plugins")
-```
-Each entry point should resolve to a callable accepting the `cli` instance.
+The reference Argon demo lives in:
 
-## Error Types
-- `CommandNotFound`
-- `CommandUsageError`
-- `CommandExecutionError`
+- [`examples/demo.py`](examples/demo.py)
 
-## Demo
-See `examples/demo.py` for a fuller demonstration.
+It shows the intended flow for Argon apps:
 
-## Contributing
-Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for environment setup, testing expectations, and pull request guidelines.
-
-## Changelog
-All notable changes are tracked in [CHANGELOG.md](CHANGELOG.md).
-
-## License
-Argon is available under the [MIT License](LICENSE).
+- start with `app = argon.App(...)`
+- prefer `Annotated[..., argon.Argument(...)]` and `Annotated[..., argon.Option(...)]`
+- send terminal output through `ctx.out`
+- keep argv execution and shell execution on the same command graph
+- compose theme layers against stable semantic style keys
+- default to a shell-first experience when the app is run with no argv
