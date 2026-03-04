@@ -8,10 +8,16 @@ terminal UX as a first-class runtime concern.
 
 ## Status
 
-Argon is currently being rebuilt around the contract in
-[`docs/contract.md`](docs/contract.md).
+Argon v1.0.0 is the current stable release.
 
-The stable theme and formatter namespace is documented in
+Public docs start at [`docs/index.md`](docs/index.md).
+
+Internal architecture contracts are maintained under `docs/dev/`, including:
+
+- [`docs/dev/contract.md`](docs/dev/contract.md)
+- [`docs/dev/theming.md`](docs/dev/theming.md)
+
+The stable theme namespace is documented in
 [`docs/theming.md`](docs/theming.md).
 
 ## Example
@@ -59,6 +65,10 @@ app = argon.App(
     ),
     shell_config=argon.ShellConfig(
         history_path=".demo-history",
+        completion=argon.CompletionConfig(
+            option_display="long",
+            show_help_tooltips=False,
+        ),
         prompt=argon.PromptConfig(
             template="[argon.prompt.brand]{app.name}[/argon.prompt.brand]{system.time_badge} [argon.prompt.symbol]>[/argon.prompt.symbol] ",
             tokens={

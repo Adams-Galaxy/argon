@@ -61,7 +61,7 @@ def _prompt_time(formatter: object | None) -> Text:
 app = argon.App(
     name="argon-demo",
     help="Shell-first reference app showing the intended Argon authoring flow.",
-    version="0.1.0",
+    version="1.0.0",
     theme=DEMO_THEME,
     no_args_is_help=True,
     shell_config=DEMO_SHELL_CONFIG.with_prompt_tokens(
@@ -186,6 +186,8 @@ def doctor(ctx: argon.Context) -> None:
                 "4. Use `ctx.out.status()` and `ctx.out.progress()` for live terminal UI.",
                 "5. Share the same command graph between argv and shell execution.",
                 "6. Compose themes in layers against stable semantic keys.",
+                "7. In active event loops, use `run_argv_async()` / `run_line_async()`.",
+                "8. Tune completion UX with `ShellConfig.completion`.",
             ]
         ),
     )
@@ -272,6 +274,30 @@ async def fanout(ctx: argon.Context) -> None:
         }
     )
     ctx.out.kv("Fanout", results)
+
+
+@app.command(help="Finalize a progress display with command-level policies")
+def rollout(
+    ctx: argon.Context,
+    fail: Annotated[bool, argon.Option("--fail", help="Force rollout failure")] = False,
+) -> str:
+    with ctx.out.progress(
+        final="success",
+        failed_final="error",
+        final_message="Rollout completed",
+        failed_final_message="Rollout failed",
+    ) as progress:
+        task_id = progress.add_task("Rollout", total=3)
+        for _ in range(3):
+            time.sleep(0.02)
+            progress.advance(task_id)
+        if fail:
+            progress.fail("Rollout failed")
+            ctx.out.warning("Rolled back changes")
+            return "failed"
+        progress.succeed("Rollout completed")
+    ctx.out.success("Changes applied")
+    return "completed"
 
 
 @app.command(help="Show the nested live display guard in action")

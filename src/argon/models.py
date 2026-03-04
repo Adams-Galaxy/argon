@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
-from inspect import Parameter
+from inspect import _ParameterKind
 from typing import Any
 
 
@@ -60,7 +60,7 @@ class ParamMeta:
     name: str
     annotation: Any
     default: Any
-    kind: Parameter.kind
+    kind: _ParameterKind
     parameter_info: ParameterInfo
     is_context: bool = False
 

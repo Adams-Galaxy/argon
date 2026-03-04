@@ -71,6 +71,8 @@ SEMANTIC_STYLE_KEYS: tuple[str, ...] = tuple(
 
 
 class ThemeResolutionError(RuntimeError):
+    """Base error for semantic theme resolution failures."""
+
     pass
 
 
@@ -95,17 +97,36 @@ class ThemeMissingReferenceError(ThemeResolutionError):
 
 @dataclass(frozen=True, slots=True)
 class ThemeLayer:
+    """Named map of semantic styles.
+
+    @param name Layer name used for diagnostics/composition.
+    @param styles Style map keyed by semantic token name.
+    """
+
     name: str
     styles: Mapping[str, str]
 
 
 @dataclass(frozen=True, slots=True)
 class ArgonTheme:
+    """Composable semantic theme model.
+
+    @param base Required base theme layer.
+    @param overrides Optional override layers applied in-order.
+    """
+
     base: ThemeLayer
     overrides: tuple[ThemeLayer, ...] = ()
 
     @classmethod
     def from_mapping(cls, data: Mapping[str, object] | None = None) -> "ArgonTheme":
+        """Build a theme from a mapping payload.
+
+        @param data Mapping payload from Python/JSON sources.
+        @returns Parsed theme instance.
+        @raises TypeError If payload shape is invalid.
+        """
+
         payload = data or {}
         base_data = payload.get("base")
         inherited_defaults = default_styles()
@@ -151,40 +172,83 @@ class ArgonTheme:
 
     @classmethod
     def from_file(cls, path: str | Path) -> "ArgonTheme":
+        """Load a theme from a JSON file.
+
+        @param path Path to a JSON object payload.
+        @returns Parsed theme instance.
+        @raises TypeError If the file does not contain a JSON object.
+        """
+
         payload = json.loads(Path(path).read_text())
         if not isinstance(payload, Mapping):
             raise TypeError("Theme file must contain an object")
         return cls.from_mapping(payload)
 
     def with_overrides(self, name: str, styles: Mapping[str, str]) -> "ArgonTheme":
+        """Return a copy with an appended override layer.
+
+        @param name Override layer name.
+        @param styles Semantic style updates.
+        @returns New theme instance with appended layer.
+        """
+
         return ArgonTheme(
             base=self.base,
             overrides=self.overrides + (ThemeLayer(name=name, styles=styles),),
         )
 
     def merged_styles(self) -> dict[str, str]:
+        """Merge base and override layers without resolving references.
+
+        @returns Flat style mapping before reference expansion.
+        """
+
         merged = dict(self.base.styles)
         for layer in self.overrides:
             merged.update(layer.styles)
         return merged
 
     def resolved_styles(self) -> dict[str, str]:
+        """Resolve merged styles and validate semantic completeness.
+
+        @returns Fully resolved style mapping.
+        @raises ThemeResolutionError On missing keys, cycles, or bad references.
+        """
+
         merged = self.merged_styles()
         validate_semantic_styles(merged)
         return resolve_style_references(merged)
 
 
 def semantic_style_groups() -> dict[str, tuple[str, ...]]:
+    """Return semantic style groups for documentation/tooling.
+
+    @returns Mapping of style group names to semantic style keys.
+    """
+
     return dict(SEMANTIC_STYLE_GROUPS)
 
 
 def validate_semantic_styles(styles: Mapping[str, str]) -> None:
+    """Validate that all required semantic style keys are present.
+
+    @param styles Candidate style map.
+    @raises ThemeMissingKeysError If required keys are missing.
+    """
+
     missing = [key for key in SEMANTIC_STYLE_KEYS if key not in styles]
     if missing:
         raise ThemeMissingKeysError(missing)
 
 
 def resolve_style_references(styles: Mapping[str, str]) -> dict[str, str]:
+    """Resolve `{style.reference}` indirections in a style map.
+
+    @param styles Style mapping with optional symbolic references.
+    @returns Resolved style mapping.
+    @raises ThemeResolutionError On missing keys, cycles, or bad references.
+    """
+
     resolved: dict[str, str] = {}
     visiting: list[str] = []
 
@@ -223,6 +287,11 @@ def resolve_style_references(styles: Mapping[str, str]) -> dict[str, str]:
 
 
 def default_styles() -> dict[str, str]:
+    """Return Argon's default semantic style mapping.
+
+    @returns Default style map including compatibility aliases.
+    """
+
     return {
         "argon.surface.base": "white on black",
         "argon.surface.panel": "white on black",
@@ -286,9 +355,20 @@ def default_styles() -> dict[str, str]:
 
 
 def default_theme() -> ArgonTheme:
+    """Create the default Argon semantic theme.
+
+    @returns Default `ArgonTheme` instance.
+    """
+
     return ArgonTheme(base=ThemeLayer(name="default", styles=default_styles()))
 
 
 def build_theme(theme: ArgonTheme | None = None) -> Theme:
+    """Build a Rich `Theme` from an Argon semantic theme.
+
+    @param theme Optional Argon theme. Uses defaults when omitted.
+    @returns Rich theme object.
+    """
+
     resolved = (theme or default_theme()).resolved_styles()
     return Theme(resolved)

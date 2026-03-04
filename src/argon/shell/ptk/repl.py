@@ -11,7 +11,7 @@ def run_ptk_repl(console, session, *, mouse_support: bool = False) -> int:
     from prompt_toolkit import PromptSession
     from prompt_toolkit.formatted_text import ANSI
 
-    ptk = PromptSession(
+    ptk: PromptSession[str] = PromptSession(
         completer=make_completer(console),
         lexer=make_lexer(console),
         style=build_style(theme=console.app.theme),

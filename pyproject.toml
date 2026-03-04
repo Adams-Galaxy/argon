@@ -4,16 +4,16 @@ build-backend = "hatchling.build"
 
 [project]
 name = "argon"
-version = "0.1.0"
+version = "1.0.0"
 description = "Typer-inspired, shell-first CLI framework for Rich and prompt_toolkit."
 readme = "README.md"
 license = { file = "LICENSE" }
 authors = [{ name = "Adam Williams" }]
 requires-python = ">=3.11"
-dependencies = ["rich>=13.7", "prompt_toolkit>=3.0.43"]
+dependencies = ["rich>=13.7", "prompt_toolkit>=3.0.43", "pydantic>=2.8"]
 keywords = ["cli", "shell", "terminal", "rich", "prompt-toolkit", "typer"]
 classifiers = [
-  "Development Status :: 3 - Alpha",
+  "Development Status :: 5 - Production/Stable",
   "Intended Audience :: Developers",
   "License :: OSI Approved :: MIT License",
   "Programming Language :: Python :: 3",

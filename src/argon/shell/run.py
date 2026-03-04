@@ -11,6 +11,16 @@ from .session import ShellSession
 
 @dataclass(slots=True)
 class Shell:
+    """Interactive shell adapter over the backend console.
+
+    @param console Backend `Console` instance.
+    @param prompt Optional prompt template override.
+    @param history Optional history enable override.
+    @param mouse_support Optional mouse support override.
+    @param history_path Optional history file path override.
+    @param prompt_tokens Optional prompt token override mapping.
+    """
+
     console: Any
     prompt: str | None = None
     history: bool | None = None
@@ -37,6 +47,11 @@ class Shell:
         )
 
     def run(self) -> int:
+        """Run the shell prompt loop.
+
+        @returns Shell exit code.
+        """
+
         with self.console.terminal_output():
             try:
                 from .ptk.repl import run_ptk_repl

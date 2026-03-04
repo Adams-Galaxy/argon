@@ -8,6 +8,7 @@ import argon
 def test_public_exports() -> None:
     assert "App" in argon.__all__
     assert "AppConfig" in argon.__all__
+    assert "CompletionConfig" in argon.__all__
     assert "LiveDisplayError" in argon.__all__
     assert "LiveConfig" in argon.__all__
     assert "Shell" in argon.__all__
@@ -48,3 +49,10 @@ def test_run_single_function_shortcut(monkeypatch) -> None:
 
 def test_app_console_is_stable_instance(demo_app: argon.App) -> None:
     assert demo_app.console() is demo_app.console()
+
+
+def test_async_methods_exist_on_public_api(demo_app: argon.App) -> None:
+    assert hasattr(demo_app, "run_argv_async")
+    assert hasattr(demo_app, "run_line_async")
+    assert hasattr(demo_app.console(), "execute_argv_async")
+    assert hasattr(demo_app.console(), "execute_line_async")

@@ -41,7 +41,8 @@ def render(
     if all(isinstance(part, Text) for part in result):
         out = Text()
         for part in result:
-            out.append(part)
+            if isinstance(part, Text):
+                out.append_text(part)
         return out
     return Group(*result)
 

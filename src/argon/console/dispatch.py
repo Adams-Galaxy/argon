@@ -2,22 +2,42 @@ from __future__ import annotations
 
 import asyncio
 import inspect
-from typing import Any
+from collections.abc import Coroutine
+from typing import Any, cast
 
 from ..introspect import get_params_from_function
 from ..models import CommandSpec, ParamMeta
 from .context import Context
-from .errors import BadParameter
+from .errors import BadParameter, UsageError
 
 
-def finalize_result(result: Any) -> Any:
+def finalize_result_sync(result: Any) -> Any:
+    # Sync execution is deterministic: either concrete value or explicit guidance
+    # to use async entrypoints when already running inside an event loop.
     if not inspect.isawaitable(result):
         return result
     try:
         asyncio.get_running_loop()
     except RuntimeError:
-        return asyncio.run(result)
+        return asyncio.run(cast(Coroutine[Any, Any, Any], result))
+    if inspect.iscoroutine(result):
+        result.close()
+    raise UsageError(
+        "Cannot execute async command from sync API inside a running event loop. "
+        "Use App.run_argv_async()/run_line_async() or Console.execute_argv_async()/execute_line_async()."
+    )
+
+
+async def finalize_result_async(result: Any) -> Any:
+    if inspect.isawaitable(result):
+        return await result
     return result
+
+
+def finalize_result(result: Any) -> Any:
+    """Backward-compatible alias for sync finalization."""
+
+    return finalize_result_sync(result)
 
 
 def _build_call(
@@ -43,7 +63,12 @@ def _build_call(
 
 def invoke_command(command: CommandSpec, ctx: Context, values: dict[str, object]) -> Any:
     args, kwargs = _build_call(command.params, ctx, values)
-    return finalize_result(command.callback(*args, **kwargs))
+    return finalize_result_sync(command.callback(*args, **kwargs))
+
+
+async def invoke_command_async(command: CommandSpec, ctx: Context, values: dict[str, object]) -> Any:
+    args, kwargs = _build_call(command.params, ctx, values)
+    return await finalize_result_async(command.callback(*args, **kwargs))
 
 
 def invoke_callable(fn: Any, ctx: Context, *, args: tuple[Any, ...], kwargs: dict[str, Any]) -> Any:
@@ -66,6 +91,7 @@ def forward_callable(fn: Any, ctx: Context, *, overrides: dict[str, Any]) -> Any
     call_args: list[Any] = []
     call_kwargs: dict[str, Any] = {}
     for param in params:
+        value: Any
         if param.is_context:
             value = ctx
         elif param.name in overrides:

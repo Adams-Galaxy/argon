@@ -7,6 +7,8 @@ from typing import Any
 from ..models import ArgumentInfo, CompletionItem, CompletionResult, OptionInfo
 from .partial import parse_partial
 
+OptionDisplayPolicy = str
+
 
 def _root_builtins(version: str | None) -> list[CompletionItem]:
     items = [CompletionItem(text="help", meta="Show help for commands and groups")]
@@ -38,7 +40,37 @@ def _call_autocompletion(fn: Any, prefix: str) -> list[CompletionItem]:
     return _coerce_items(fn(None, prefix))
 
 
-def complete(root, line: str, cursor: int | None = None, *, app_version: str | None = None) -> CompletionResult:
+def _split_option_decls(decls: tuple[str, ...]) -> tuple[list[str], list[str]]:
+    long_decls: list[str] = []
+    short_decls: list[str] = []
+    for decl in decls:
+        if decl.startswith("--"):
+            long_decls.append(decl)
+        elif decl.startswith("-"):
+            short_decls.append(decl)
+    return long_decls, short_decls
+
+
+def _selected_option_decls(decls: tuple[str, ...], policy: OptionDisplayPolicy) -> list[str]:
+    # Completion policy is resolved in the backend so shell frontends stay thin.
+    long_decls, short_decls = _split_option_decls(decls)
+    if policy == "none":
+        return []
+    if policy == "all":
+        return list(decls)
+    if policy == "short":
+        return short_decls if short_decls else long_decls
+    return long_decls if long_decls else short_decls
+
+
+def complete(
+    root,
+    line: str,
+    cursor: int | None = None,
+    *,
+    app_version: str | None = None,
+    option_display: OptionDisplayPolicy = "long",
+) -> CompletionResult:
     partial = parse_partial(root, line, cursor)
     resolution = partial.resolution
     prefix = partial.current
@@ -78,7 +110,7 @@ def complete(root, line: str, cursor: int | None = None, *, app_version: str | N
                 info = param.parameter_info
                 if not isinstance(info, OptionInfo):
                     continue
-                for decl in info.param_decls:
+                for decl in _selected_option_decls(info.param_decls, option_display):
                     if prefix and not decl.startswith(prefix):
                         continue
                     items.append(CompletionItem(text=decl, meta=info.help))

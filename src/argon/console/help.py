@@ -38,10 +38,10 @@ def render_group_help(*, app_name: str, group: GroupSpec) -> Group:
         if child.hidden:
             continue
         table.add_row("group", name, child.help or "")
-    for name, child in sorted(group.commands.items()):
-        if child.hidden:
+    for name, command_spec in sorted(group.commands.items()):
+        if command_spec.hidden:
             continue
-        table.add_row("command", name, child.help or "")
+        table.add_row("command", name, command_spec.help or "")
     title = Text(f"{app_name} {' '.join(group.path)}".strip() or app_name, style="argon.title")
     usage = Text(_usage_for_group(app_name, group), style="argon.dim")
     description = Text(group.help or "")

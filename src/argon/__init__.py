@@ -1,7 +1,7 @@
 """Public exports for Argon."""
 
 from .app import App
-from .config import AppConfig, LiveConfig, PromptConfig, ShellConfig
+from .config import AppConfig, CompletionConfig, LiveConfig, PromptConfig, ShellConfig
 from .console.context import Context
 from .console.errors import Abort, ArgonError, BadParameter, Exit, UsageError
 from .console.output import LiveDisplayError
@@ -15,6 +15,7 @@ __all__ = [
     "Abort",
     "App",
     "AppConfig",
+    "CompletionConfig",
     "ArgonTheme",
     "ArgonError",
     "Argument",

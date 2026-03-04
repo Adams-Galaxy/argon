@@ -3,8 +3,9 @@ from __future__ import annotations
 import asyncio
 from collections.abc import Awaitable, Callable, Iterable, Iterator, Mapping, Sequence
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, cast
 
+from rich.console import RenderableType
 from rich.panel import Panel
 from rich.progress import BarColumn, Progress, ProgressColumn, SpinnerColumn, Task, TextColumn
 from rich.rule import Rule
@@ -12,6 +13,8 @@ from rich.text import Text
 
 
 class LiveDisplayError(RuntimeError):
+    """Raised when multiple live displays overlap on the same output surface."""
+
     pass
 
 
@@ -97,7 +100,7 @@ class _LiveOwner:
 
 @dataclass(slots=True)
 class StatusDisplay(_LiveOwner):
-    task_id: TaskID = 0
+    task_id: TaskID = cast(TaskID, 0)
     final: str | Text = "success"
     failed_final: str | Text = "error"
     resolved_final: str | Text | None = None
@@ -149,12 +152,59 @@ class StatusDisplay(_LiveOwner):
 
 @dataclass(slots=True)
 class ProgressDisplay(_LiveOwner):
+    final: str | Text = "leave"
+    failed_final: str | Text = "error"
+    final_message: str | None = None
+    failed_final_message: str | None = None
+    resolved_final: str | Text | None = None
+    resolved_message: str | None = None
+
     def __enter__(self) -> "ProgressDisplay":
         self.start()
         return self
 
     def __exit__(self, exc_type, exc, tb) -> None:  # type: ignore[no-untyped-def]
+        live = self.output.live_config
+        final = self.resolved_final
+        message = self.resolved_message
+        if final is None:
+            if exc_type is None:
+                final = self.final
+                message = self.final_message
+            else:
+                final = self.failed_final
+                message = self.failed_final_message
+
+        spinner_column = next(
+            (column for column in self.progress.columns if isinstance(column, SpinnerColumn)),
+            None,
+        )
+        if spinner_column is not None:
+            spinner_column.finished_text = _coerce_finish_text(
+                "blank" if final == "clear" else final,
+                fallback_style="argon.live.spinner",
+                success_symbol=getattr(live, "success_symbol", "✓"),
+                error_symbol=getattr(live, "error_symbol", "✗"),
+            )
+
+        if final != "leave":
+            for task in list(self.progress.tasks):
+                total = 1 if task.total is None else task.total
+                self.progress.update(task.id, total=total, completed=total)
+
+        if final == "clear":
+            setattr(self.progress, "transient", True)
+
+        emit_after_stop: str | None = None
+        if message is not None and self.progress.tasks:
+            if len(self.progress.tasks) == 1:
+                task_id = self.progress.tasks[0].id
+                self.progress.update(task_id, description=message)
+            else:
+                emit_after_stop = message
         self.stop()
+        if emit_after_stop is not None:
+            self.output.text(emit_after_stop, style="argon.live.message")
 
     async def __aenter__(self) -> "ProgressDisplay":
         return self.__enter__()
@@ -170,6 +220,16 @@ class ProgressDisplay(_LiveOwner):
 
     def update(self, task_id: TaskID, **kwargs: Any) -> None:
         self.progress.update(task_id, **kwargs)
+
+    def finish(self, final: str | Text, *, message: str | None = None) -> None:
+        self.resolved_final = final
+        self.resolved_message = message
+
+    def succeed(self, message: str | None = None) -> None:
+        self.finish("success", message=message)
+
+    def fail(self, message: str | None = None) -> None:
+        self.finish("error", message=message)
 
     async def gather(self, tasks: Mapping[str, Awaitable[Any]]) -> dict[str, Any]:
         task_ids = {name: self.add_task(name, total=1) for name in tasks}
@@ -268,7 +328,7 @@ class Output:
     def success(self, message: str) -> None:
         self._emit(Text(message, style="argon.success"))
 
-    def panel(self, title: str, body: object) -> None:
+    def panel(self, title: str, body: RenderableType | str) -> None:
         self._emit(Panel.fit(body, title=title, border_style="argon.border"))
 
     def kv(self, title: str, data: dict[str, object] | str) -> None:
@@ -317,7 +377,7 @@ class Output:
         failed_final: str | Text | None = None,
     ) -> StatusDisplay:
         live = self.live_config
-        resolved_spinner = spinner or getattr(live, "spinner", "dots")
+        resolved_spinner = cast(str, spinner or getattr(live, "spinner", "dots"))
         resolved_show_elapsed = (
             getattr(live, "show_elapsed", True) if show_elapsed is None else show_elapsed
         )
@@ -365,9 +425,31 @@ class Output:
             failed_final=failed_final,
         )
 
-    def progress(self, *, transient: bool | None = None) -> ProgressDisplay:
+    def progress(
+        self,
+        *,
+        transient: bool | None = None,
+        final: str | Text | None = None,
+        failed_final: str | Text | None = None,
+        final_message: str | None = None,
+        failed_final_message: str | None = None,
+    ) -> ProgressDisplay:
         live = self.live_config
         resolved_transient = getattr(live, "progress_transient", False) if transient is None else transient
+        resolved_final = final if final is not None else getattr(live, "progress_final", "leave")
+        resolved_failed_final = (
+            failed_final if failed_final is not None else getattr(live, "progress_failed_final", "error")
+        )
+        resolved_final_message = (
+            final_message
+            if final_message is not None
+            else getattr(live, "progress_final_message", None)
+        )
+        resolved_failed_final_message = (
+            failed_final_message
+            if failed_final_message is not None
+            else getattr(live, "progress_failed_final_message", None)
+        )
         progress = Progress(
             SpinnerColumn(style="argon.live.spinner"),
             TextColumn("[argon.progress.description]{task.description}"),
@@ -384,7 +466,14 @@ class Output:
             transient=resolved_transient,
             auto_refresh=True,
         )
-        return ProgressDisplay(output=self, progress=progress)
+        return ProgressDisplay(
+            output=self,
+            progress=progress,
+            final=resolved_final,
+            failed_final=resolved_failed_final,
+            final_message=resolved_final_message,
+            failed_final_message=resolved_failed_final_message,
+        )
 
     def track(
         self,
@@ -393,9 +482,25 @@ class Output:
         description: str,
         total: int | None = None,
         transient: bool | None = None,
+        final: str | Text | None = None,
+        failed_final: str | Text | None = None,
+        final_message: str | None = None,
+        failed_final_message: str | None = None,
     ) -> Iterator[Any]:
-        progress = self.progress(transient=transient)
-        resolved_total = total if total is not None else len(sequence) if hasattr(sequence, "__len__") else None
+        progress = self.progress(
+            transient=transient,
+            final=final,
+            failed_final=failed_final,
+            final_message=final_message,
+            failed_final_message=failed_final_message,
+        )
+        resolved_total: int | None
+        if total is not None:
+            resolved_total = total
+        elif isinstance(sequence, Sequence):
+            resolved_total = len(sequence)
+        else:
+            resolved_total = None
 
         def iterator() -> Iterator[Any]:
             with progress as display:
@@ -412,8 +517,18 @@ class Output:
         *,
         description: str = "Stages",
         transient: bool | None = None,
+        final: str | Text | None = None,
+        failed_final: str | Text | None = None,
+        final_message: str | None = None,
+        failed_final_message: str | None = None,
     ) -> StageDisplay:
-        display = self.progress(transient=transient)
+        display = self.progress(
+            transient=transient,
+            final=final,
+            failed_final=failed_final,
+            final_message=final_message,
+            failed_final_message=failed_final_message,
+        )
         task_id = display.add_task(description, total=len(stage_names), start=False)
         return StageDisplay(
             display=display,
@@ -452,9 +567,9 @@ class Output:
             if resolve_final is not None:
                 status.finish(resolve_final(result))
             if resolve_message is not None:
-                message = resolve_message(result)
-                if message is not None:
-                    status.update(message)
+                resolved_message = resolve_message(result)
+                if resolved_message is not None:
+                    status.update(resolved_message)
             return result
 
     async def gather(
@@ -462,6 +577,16 @@ class Output:
         tasks: Mapping[str, Awaitable[Any]],
         *,
         transient: bool | None = None,
+        final: str | Text | None = None,
+        failed_final: str | Text | None = None,
+        final_message: str | None = None,
+        failed_final_message: str | None = None,
     ) -> dict[str, Any]:
-        async with self.progress(transient=transient) as display:
+        async with self.progress(
+            transient=transient,
+            final=final,
+            failed_final=failed_final,
+            final_message=final_message,
+            failed_final_message=failed_final_message,
+        ) as display:
             return await display.gather(tasks)

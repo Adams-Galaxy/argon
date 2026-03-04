@@ -1,8 +1,13 @@
 {
+  "schema_version": 1,
   "shell": {
     "history": true,
     "mouse_support": false,
     "history_path": ".argon-demo-history",
+    "completion": {
+      "option_display": "long",
+      "show_help_tooltips": false
+    },
     "live": {
       "spinner": "dots",
       "show_elapsed": true,
@@ -12,7 +17,9 @@
       "status_failed_final": "error",
       "awaiting_final": "clear",
       "awaiting_failed_final": "error",
-      "progress_transient": false
+      "progress_transient": false,
+      "progress_final": "success",
+      "progress_failed_final": "error"
     },
     "prompt": {
       "template": "[argon.prompt.brand]{app.name}[/argon.prompt.brand]{session.workspace_badge}{session.profile_badge}{system.time_badge}\n[argon.prompt.symbol]>[/argon.prompt.symbol] "

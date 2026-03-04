@@ -44,3 +44,60 @@ def test_completion_uses_option_value_autocompletion() -> None:
 
     result = app.console().complete("run build --mode f")
     assert "fast" in [item.text for item in result.items]
+
+
+def test_completion_option_policy_short_prefers_short_when_available() -> None:
+    app = argon.App(
+        name="demo",
+        shell_config=argon.ShellConfig(
+            completion=argon.CompletionConfig(option_display="short"),
+        ),
+    )
+
+    @app.command()
+    def greet(
+        name: str,
+        times: int = argon.Option("--times", "-t"),
+        loud: bool = argon.Option("--loud"),
+    ) -> None:
+        return None
+
+    result = app.console().complete("greet Ada -")
+    texts = [item.text for item in result.items]
+    assert "-t" in texts
+    assert "--times" not in texts
+    assert "--loud" in texts
+
+
+def test_completion_option_policy_all_returns_all_decls() -> None:
+    app = argon.App(
+        name="demo",
+        shell_config=argon.ShellConfig(
+            completion=argon.CompletionConfig(option_display="all"),
+        ),
+    )
+
+    @app.command()
+    def greet(name: str, times: int = argon.Option("--times", "-t")) -> None:
+        return None
+
+    result = app.console().complete("greet Ada -")
+    texts = [item.text for item in result.items]
+    assert "--times" in texts
+    assert "-t" in texts
+
+
+def test_completion_option_policy_none_suppresses_option_completions() -> None:
+    app = argon.App(
+        name="demo",
+        shell_config=argon.ShellConfig(
+            completion=argon.CompletionConfig(option_display="none"),
+        ),
+    )
+
+    @app.command()
+    def greet(name: str, times: int = argon.Option("--times", "-t")) -> None:
+        return None
+
+    result = app.console().complete("greet Ada --")
+    assert [item.text for item in result.items] == []

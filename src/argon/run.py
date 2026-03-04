@@ -13,6 +13,15 @@ def run(
     help: str | None = None,
     version: str | None = None,
 ) -> object:
+    """Run a single-function Argon app.
+
+    @param fn Callable to expose as the app's primary command.
+    @param name Optional app name.
+    @param help Optional help text for app and command.
+    @param version Optional app version string.
+    @returns Command callback result.
+    """
+
     app = App(name=name or getattr(fn, "__name__", "app"), help=help, version=version)
     command_name = getattr(fn, "__name__", "main").replace("_", "-")
     app.command(name=command_name, help=help)(fn)

@@ -167,3 +167,46 @@ def test_stages_and_gather_helpers_render(capsys) -> None:
     assert "Pipeline" in out
     assert "alpha" in out
     assert "beta" in out
+
+
+def test_progress_uses_shell_live_defaults(capsys) -> None:
+    app = argon.App(
+        name="demo",
+        shell_config=argon.ShellConfig(
+            live=argon.LiveConfig(progress_final="success", success_symbol="✔"),
+        ),
+    )
+
+    @app.command()
+    def work(ctx: argon.Context) -> None:
+        with ctx.out.progress() as progress:
+            task_id = progress.add_task("Work", total=1)
+            progress.advance(task_id)
+
+    app.run_argv(["work"])
+    out = capsys.readouterr().out
+    assert "Work" in out
+    assert "✔" in out
+
+
+def test_progress_can_finish_dynamically_with_message(capsys) -> None:
+    app = argon.App(name="demo")
+
+    @app.command()
+    def rollout(ctx: argon.Context, fail: bool = False) -> str:
+        with ctx.out.progress(final="success", failed_final="error") as progress:
+            task_id = progress.add_task("Rollout", total=1)
+            progress.advance(task_id)
+            if fail:
+                progress.fail("Rollout failed")
+                return "failed"
+            progress.succeed("Rollout complete")
+            return "completed"
+
+    assert app.run_argv(["rollout", "--fail"]) == "failed"
+    assert app.run_argv(["rollout"]) == "completed"
+    out = capsys.readouterr().out
+    assert "Rollout failed" in out
+    assert "Rollout complete" in out
+    assert "✗" in out
+    assert "✓" in out

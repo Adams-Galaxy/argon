@@ -47,8 +47,11 @@ def test_demo_theme_is_layered_and_resolved() -> None:
 
 
 def test_demo_config_is_loaded_from_file() -> None:
+    assert DEMO_CONFIG.schema_version == 1
     assert DEMO_CONFIG.theme is not None
     assert DEMO_CONFIG.shell.history_path == ".argon-demo-history"
+    assert DEMO_CONFIG.shell.completion.option_display == "long"
+    assert DEMO_CONFIG.shell.completion.show_help_tooltips is False
 
 
 def test_demo_wait_command_runs_async_spinner(capsys) -> None:
@@ -91,3 +94,13 @@ def test_demo_nested_guard_command(capsys) -> None:
     app.run_argv(["nested"])
     out = capsys.readouterr().out
     assert "Another live display is already active" in out
+
+
+def test_demo_rollout_progress_finalization(capsys) -> None:
+    success = app.run_argv(["rollout"])
+    failure = app.run_argv(["rollout", "--fail"])
+    out = capsys.readouterr().out
+    assert success == "completed"
+    assert failure == "failed"
+    assert "Rollout completed" in out
+    assert "Rollout failed" in out
