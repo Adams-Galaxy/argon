@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from contextlib import suppress
+
 
 def longest_common_prefix(items: list[str]) -> str:
     if not items:
@@ -40,10 +42,8 @@ def handle_tab(buffer, event) -> None:  # type: ignore[no-untyped-def]
         )
         if suffix:
             buffer.insert_text(suffix)
-            try:
+            with suppress(Exception):  # noqa: BLE001
                 buffer.start_completion(select_first=False)
-            except Exception:  # noqa: BLE001
-                pass
             return
     buffer.start_completion(select_first=False)
 
@@ -66,9 +66,7 @@ def build_key_bindings():
         if buffer.complete_state is not None:
             buffer.complete_previous()
             return
-        try:
+        with suppress(Exception):  # noqa: BLE001
             buffer.start_completion(select_first=False)
-        except Exception:  # noqa: BLE001
-            pass
 
     return kb

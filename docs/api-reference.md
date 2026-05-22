@@ -16,6 +16,7 @@ from argon import (
     PromptConfig,
     LiveConfig,
     CompletionConfig,
+    CompletionItem,
     ArgonTheme,
     ThemeLayer,
     default_theme,
@@ -33,8 +34,9 @@ from argon import (
 
 - registration: `command()`, `group()`, `callback()`, `add_typer()`
 - backend access: `console()`
-- shell access: `shell()`, `run_shell()`
-- sync execution: `run_argv()`, `run_line()`, `__call__()`
+- shell access: `shell()`, `run()`, `run_shell()`
+- sync execution: `run_argv()`, `run_line()`
+- shell shortcut: `__call__()`
 - async execution: `run_argv_async()`, `run_line_async()`
 
 ## Console
@@ -67,3 +69,7 @@ All config models provide:
 
 - `with_prompt()`
 - `with_prompt_tokens()`
+
+## Completion
+
+- rich candidates: `CompletionItem(text, display=None, meta=None)`

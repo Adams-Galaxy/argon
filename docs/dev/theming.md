@@ -157,7 +157,7 @@ surfaces fight over the terminal.
 Argon can load static shell/theme config from JSON files:
 
 ```python
-config = argon.AppConfig.from_file("examples/demo.config.json")
+config = argon.AppConfig.from_file("my.config.json")
 app = argon.App(
     name="demo",
     theme=config.theme,

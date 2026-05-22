@@ -59,7 +59,11 @@ def render_command_help(*, app_name: str, command: CommandSpec) -> Group:
         default = info.resolved_default()
         default_text = "" if default is Required else repr(default)
         kind = "option" if isinstance(info, OptionInfo) else "argument"
-        label = ", ".join(info.param_decls) if isinstance(info, OptionInfo) and info.param_decls else param.name
+        label = (
+            ", ".join(info.param_decls)
+            if isinstance(info, OptionInfo) and info.param_decls
+            else param.name
+        )
         help_parts = [info.help or ""]
         if info.required:
             help_parts.append("required")

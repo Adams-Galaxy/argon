@@ -8,7 +8,7 @@ terminal UX as a first-class runtime concern.
 
 ## Status
 
-Argon v1.0.0 is the current stable release.
+Argon v1.0.1 is the current stable release.
 
 Public docs start at [`docs/index.md`](docs/index.md).
 
@@ -47,7 +47,7 @@ if __name__ == "__main__":
 You can also run the same command graph interactively:
 
 ```python
-app.run_shell()
+app.run()
 ```
 
 Prompts and shell behavior can be configured at the app layer:
@@ -83,7 +83,7 @@ Static shell/theme config can also be loaded from JSON and then extended in
 Python with dynamic prompt tokens:
 
 ```python
-config = argon.AppConfig.from_file("examples/demo.config.json")
+config = argon.AppConfig.from_file("my.config.json")
 
 app = argon.App(
     name="demo",

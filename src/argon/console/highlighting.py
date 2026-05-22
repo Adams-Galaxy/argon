@@ -13,6 +13,10 @@ class TokenSpan:
     end: int
 
 
+def _looks_numeric(text: str) -> bool:
+    return text.lstrip("-").replace(".", "", 1).isdigit()
+
+
 def tokenize(line: str) -> list[TokenSpan]:
     spans: list[TokenSpan] = []
     i = 0
@@ -97,7 +101,7 @@ def highlight(root, line: str) -> list[StyledSpan]:
             eq_idx = span.start + len(key)
             out.append(StyledSpan(span.start, eq_idx, ("argon.option",)))
             out.append(StyledSpan(eq_idx, eq_idx + 1, ()))
-            if value.isdigit():
+            if _looks_numeric(value):
                 value_style = ("argon.number",)
             elif value.startswith('"') or value.startswith("'"):
                 value_style = ("argon.string",)
@@ -112,12 +116,12 @@ def highlight(root, line: str) -> list[StyledSpan]:
             styles = ("argon.value",)
         elif effective_word_index < command_len:
             styles = ("argon.command",)
-        elif text.startswith("-"):
-            styles = ("argon.option",)
         elif span.kind == "quoted":
             styles = ("argon.string",)
-        elif text.lstrip("-").replace(".", "", 1).isdigit():
+        elif _looks_numeric(text):
             styles = ("argon.number",)
+        elif text.startswith("-"):
+            styles = ("argon.option",)
         else:
             styles = ("argon.value",)
         out.append(StyledSpan(span.start, span.end, styles))

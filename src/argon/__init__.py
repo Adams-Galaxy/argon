@@ -6,6 +6,7 @@ from .console.context import Context
 from .console.errors import Abort, ArgonError, BadParameter, Exit, UsageError
 from .console.output import LiveDisplayError
 from .console.runtime import Console
+from .models import CompletionItem
 from .params import Argument, Option
 from .run import run
 from .shell.run import Shell
@@ -16,6 +17,7 @@ __all__ = [
     "App",
     "AppConfig",
     "CompletionConfig",
+    "CompletionItem",
     "ArgonTheme",
     "ArgonError",
     "Argument",

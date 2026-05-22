@@ -5,10 +5,10 @@
 ## Run
 
 ```python
-app.run_shell()
+app.run()
 ```
 
-`App.run_shell()` uses the same command graph as `run_argv()` and `run_line()`.
+`App.run()` uses the same command graph as `run_argv()` and `run_line()`.
 
 ## Configuration
 
@@ -22,9 +22,19 @@ app = argon.App(
         history=True,
         history_path=".argon-history",
         mouse_support=False,
+        usage_error_display="help",
     )
 )
 ```
+
+`usage_error_display` controls resolved command usage errors in the shell:
+
+- `help`: render the command help only. This is the default.
+- `error`: render the usage error only.
+- `both`: render the usage error first, followed by command help.
+
+Errors which cannot resolve to a command, such as malformed shell input or an
+unknown command, still render as errors.
 
 ## Completion Menu Controls
 

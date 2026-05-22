@@ -9,6 +9,7 @@ def test_public_exports() -> None:
     assert "App" in argon.__all__
     assert "AppConfig" in argon.__all__
     assert "CompletionConfig" in argon.__all__
+    assert "CompletionItem" in argon.__all__
     assert "LiveDisplayError" in argon.__all__
     assert "LiveConfig" in argon.__all__
     assert "Shell" in argon.__all__
@@ -28,15 +29,27 @@ def test_group_and_add_typer(demo_app: argon.App) -> None:
     assert demo_app.run_argv(["admin", "ping"]) == "pong"
 
 
-def test_app_call_uses_sys_argv(monkeypatch) -> None:
+def test_app_call_runs_shell(monkeypatch) -> None:
+    app = argon.App(name="demo")
+    called = {"value": False}
+
+    def fake_run() -> int:
+        called["value"] = True
+        return 7
+
+    monkeypatch.setattr(app, "run", fake_run)
+    assert app() == 7
+    assert called["value"] is True
+
+
+def test_run_shell_keeps_v1_compatibility_name(monkeypatch) -> None:
     app = argon.App(name="demo")
 
-    @app.command()
-    def greet(name: str) -> str:
-        return name
+    def fake_run() -> int:
+        return 7
 
-    monkeypatch.setattr("sys.argv", ["demo", "greet", "Ada"])
-    assert app() == "Ada"
+    monkeypatch.setattr(app, "run", fake_run)
+    assert app.run_shell() == 7
 
 
 def test_run_single_function_shortcut(monkeypatch) -> None:

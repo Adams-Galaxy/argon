@@ -49,6 +49,8 @@ def resolve(root: GroupSpec, tokens: list[str]) -> Resolution:
         if command is not None:
             path.append(command.name)
             rest.pop(0)
-            return Resolution(command=command, groups=tuple(groups), path=tuple(path), remaining=tuple(rest))
+            return Resolution(
+                command=command, groups=tuple(groups), path=tuple(path), remaining=tuple(rest)
+            )
         break
     return Resolution(command=None, groups=tuple(groups), path=tuple(path), remaining=tuple(rest))

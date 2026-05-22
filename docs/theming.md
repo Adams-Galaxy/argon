@@ -40,4 +40,4 @@ app = argon.App(name="demo", theme=theme)
 
 ## JSON Theme Config
 
-`AppConfig.theme` accepts an Argon theme mapping. See `examples/demo.config.json`.
+`AppConfig.theme` accepts an Argon theme mapping.

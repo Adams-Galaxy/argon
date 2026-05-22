@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "argon"
-version = "1.0.0"
+version = "1.0.1"
 description = "Typer-inspired, shell-first CLI framework for Rich and prompt_toolkit."
 readme = "README.md"
 license = { file = "LICENSE" }
@@ -26,7 +26,14 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
-dev = ["mypy>=1.10", "pytest>=8.2", "ruff>=0.6"]
+dev = [
+  "build>=1.2",
+  "mypy>=1.10",
+  "pytest>=8.2",
+  "pytest-cov>=5.0",
+  "ruff>=0.6",
+  "twine>=5.1",
+]
 
 [project.urls]
 Homepage = "https://github.com/Adams-Galaxy/argon"
@@ -36,9 +43,29 @@ Issues = "https://github.com/Adams-Galaxy/argon/issues"
 [tool.hatch.build.targets.wheel]
 packages = ["src/argon"]
 
+[tool.hatch.build.targets.sdist]
+exclude = ["/argon.code-workspace"]
+
 [tool.ruff]
 line-length = 100
 target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I", "B", "UP", "SIM", "D"]
+ignore = [
+  # Public API docstrings are guarded by tests; private helpers may stay concise.
+  "D100",
+  "D101",
+  "D102",
+  "D103",
+  "D104",
+  "D105",
+  "D106",
+  "D107",
+  # Prefer the Black/Ruff-compatible pydocstyle convention.
+  "D203",
+  "D213",
+]
 
 [tool.pytest.ini_options]
 pythonpath = ["src", "."]
@@ -49,3 +76,12 @@ norecursedirs = [".git", ".pytest_cache", ".mypy_cache", ".ruff_cache"]
 python_version = "3.11"
 packages = ["argon"]
 strict = false
+
+[tool.coverage.run]
+branch = true
+source = ["argon"]
+
+[tool.coverage.report]
+fail_under = 80
+show_missing = true
+skip_covered = true

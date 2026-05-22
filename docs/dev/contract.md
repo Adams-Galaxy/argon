@@ -174,7 +174,7 @@ class App:
 
     def run_argv(self, argv: list[str] | None = None) -> object: ...
     def run_line(self, line: str) -> object: ...
-    def run_shell(self, **kwargs) -> int: ...
+    def run(self, **kwargs) -> int: ...
 
     def __call__(self) -> object: ...
 ```
@@ -183,8 +183,8 @@ Behavioral rules:
 
 - `App()` should be sufficient for the common case.
 - `@app.command()` should feel immediately familiar to Typer users.
-- `app()` should execute argv-style CLI behavior.
-- `app.run_shell()` should launch the interactive shell using the same command graph.
+- `app()` should launch the interactive shell as a callable shortcut.
+- `app.run()` should launch the interactive shell using the same command graph.
 - `app.console()` must return the backend execution surface for tooling and testing.
 
 ### Context
@@ -308,7 +308,7 @@ def Option(
     metavar: str | None = None,
     envvar: str | list[str] | None = None,
     parser: callable | None = None,
-    autocompletion: callable | None = None,
+    completion: sequence | callable | None = None,
     default_factory: callable | None = None,
     hidden: bool = False,
     show_default: bool | str = True,
@@ -322,7 +322,7 @@ def Argument(
     help: str | None = None,
     metavar: str | None = None,
     parser: callable | None = None,
-    autocompletion: callable | None = None,
+    completion: sequence | callable | None = None,
     default_factory: callable | None = None,
     hidden: bool = False,
     show_default: bool | str = True,
@@ -564,7 +564,7 @@ if __name__ == "__main__":
 The same app should also support:
 
 ```python
-app.run_shell()
+app.run()
 ```
 
 without a separate command definition model.
@@ -589,4 +589,3 @@ When implementation decisions are unclear, choose the option that best preserves
 3. UI-neutral core contracts
 4. Rich-first formatting
 5. a shell-native user experience
-

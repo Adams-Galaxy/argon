@@ -35,4 +35,4 @@ def run_ptk_repl(console, session, *, mouse_support: bool = False) -> int:
         try:
             console.execute_line(line)
         except Exception as exc:  # noqa: BLE001
-            console.output.error(str(exc))
+            console.render_shell_error(line, exc)

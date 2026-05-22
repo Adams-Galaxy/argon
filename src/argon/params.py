@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from collections.abc import Callable, Sequence
+from collections.abc import Callable
 from typing import Any
 
-from .models import ArgumentInfo, OptionInfo
+from .models import ArgumentInfo, CompletionSource, OptionInfo
 
 
 def Option(
@@ -12,7 +12,8 @@ def Option(
     metavar: str | None = None,
     envvar: str | list[str] | None = None,
     parser: Callable[[str], Any] | None = None,
-    autocompletion: Callable[..., Sequence[str]] | None = None,
+    completion: CompletionSource | None = None,
+    autocompletion: CompletionSource | None = None,
     default_factory: Callable[[], Any] | None = None,
     hidden: bool = False,
     required: bool = False,
@@ -26,7 +27,8 @@ def Option(
     @param metavar Placeholder label for help rendering.
     @param envvar Environment variable name(s) used for default resolution.
     @param parser Optional custom string-to-value parser.
-    @param autocompletion Optional completion callback for option values.
+    @param completion Optional static values or callback for option value completion.
+    @param autocompletion Backward-compatible alias for `completion`.
     @param default_factory Optional callable used to produce default values.
     @param hidden Whether the option is hidden from help/completion.
     @param required Whether the option must be provided.
@@ -34,6 +36,8 @@ def Option(
     @param rich_help_panel Optional named help panel section.
     @returns `OptionInfo` metadata for use with `Annotated` or default assignment.
     """
+    if completion is not None and autocompletion is not None:
+        raise ValueError("Use either completion or autocompletion, not both")
 
     return OptionInfo(
         param_decls=tuple(param_decls),
@@ -41,7 +45,7 @@ def Option(
         metavar=metavar,
         envvar=envvar,
         parser=parser,
-        autocompletion=autocompletion,
+        autocompletion=completion if completion is not None else autocompletion,
         default_factory=default_factory,
         hidden=hidden,
         required=required,
@@ -56,7 +60,8 @@ def Argument(
     metavar: str | None = None,
     envvar: str | list[str] | None = None,
     parser: Callable[[str], Any] | None = None,
-    autocompletion: Callable[..., Sequence[str]] | None = None,
+    completion: CompletionSource | None = None,
+    autocompletion: CompletionSource | None = None,
     default_factory: Callable[[], Any] | None = None,
     hidden: bool = False,
     required: bool = False,
@@ -69,7 +74,8 @@ def Argument(
     @param metavar Placeholder label for help rendering.
     @param envvar Environment variable name(s) used for default resolution.
     @param parser Optional custom string-to-value parser.
-    @param autocompletion Optional completion callback for argument values.
+    @param completion Optional static values or callback for argument completion.
+    @param autocompletion Backward-compatible alias for `completion`.
     @param default_factory Optional callable used to produce default values.
     @param hidden Whether the argument is hidden from help/completion.
     @param required Whether the argument must be provided.
@@ -77,13 +83,15 @@ def Argument(
     @param rich_help_panel Optional named help panel section.
     @returns `ArgumentInfo` metadata for use with `Annotated` or default assignment.
     """
+    if completion is not None and autocompletion is not None:
+        raise ValueError("Use either completion or autocompletion, not both")
 
     return ArgumentInfo(
         help=help,
         metavar=metavar,
         envvar=envvar,
         parser=parser,
-        autocompletion=autocompletion,
+        autocompletion=completion if completion is not None else autocompletion,
         default_factory=default_factory,
         hidden=hidden,
         required=required,

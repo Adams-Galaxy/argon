@@ -36,7 +36,6 @@ async def finalize_result_async(result: Any) -> Any:
 
 def finalize_result(result: Any) -> Any:
     """Backward-compatible alias for sync finalization."""
-
     return finalize_result_sync(result)
 
 
@@ -52,7 +51,10 @@ def _build_call(
             value: object = ctx
         else:
             value = values[param.name]
-        if param.kind in (inspect.Parameter.POSITIONAL_ONLY, inspect.Parameter.POSITIONAL_OR_KEYWORD):
+        if param.kind in (
+            inspect.Parameter.POSITIONAL_ONLY,
+            inspect.Parameter.POSITIONAL_OR_KEYWORD,
+        ):
             args.append(value)
         elif param.kind == inspect.Parameter.VAR_POSITIONAL:
             args.extend(value if isinstance(value, tuple) else (value,))
@@ -66,7 +68,9 @@ def invoke_command(command: CommandSpec, ctx: Context, values: dict[str, object]
     return finalize_result_sync(command.callback(*args, **kwargs))
 
 
-async def invoke_command_async(command: CommandSpec, ctx: Context, values: dict[str, object]) -> Any:
+async def invoke_command_async(
+    command: CommandSpec, ctx: Context, values: dict[str, object]
+) -> Any:
     args, kwargs = _build_call(command.params, ctx, values)
     return await finalize_result_async(command.callback(*args, **kwargs))
 
@@ -101,7 +105,10 @@ def forward_callable(fn: Any, ctx: Context, *, overrides: dict[str, Any]) -> Any
         else:
             raise BadParameter(f"Cannot forward missing parameter: {param.name}")
 
-        if param.kind in (inspect.Parameter.POSITIONAL_ONLY, inspect.Parameter.POSITIONAL_OR_KEYWORD):
+        if param.kind in (
+            inspect.Parameter.POSITIONAL_ONLY,
+            inspect.Parameter.POSITIONAL_OR_KEYWORD,
+        ):
             call_args.append(value)
         elif param.kind == inspect.Parameter.VAR_POSITIONAL:
             call_args.extend(value if isinstance(value, tuple) else (value,))

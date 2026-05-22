@@ -2,12 +2,11 @@ from __future__ import annotations
 
 import json
 import re
+from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Mapping
 
 from rich.theme import Theme
-
 
 _REF_RE = re.compile(r"\{([a-zA-Z0-9_.-]+)\}")
 
@@ -119,14 +118,13 @@ class ArgonTheme:
     overrides: tuple[ThemeLayer, ...] = ()
 
     @classmethod
-    def from_mapping(cls, data: Mapping[str, object] | None = None) -> "ArgonTheme":
+    def from_mapping(cls, data: Mapping[str, object] | None = None) -> ArgonTheme:
         """Build a theme from a mapping payload.
 
         @param data Mapping payload from Python/JSON sources.
         @returns Parsed theme instance.
         @raises TypeError If payload shape is invalid.
         """
-
         payload = data or {}
         base_data = payload.get("base")
         inherited_defaults = default_styles()
@@ -171,27 +169,25 @@ class ArgonTheme:
         )
 
     @classmethod
-    def from_file(cls, path: str | Path) -> "ArgonTheme":
+    def from_file(cls, path: str | Path) -> ArgonTheme:
         """Load a theme from a JSON file.
 
         @param path Path to a JSON object payload.
         @returns Parsed theme instance.
         @raises TypeError If the file does not contain a JSON object.
         """
-
         payload = json.loads(Path(path).read_text())
         if not isinstance(payload, Mapping):
             raise TypeError("Theme file must contain an object")
         return cls.from_mapping(payload)
 
-    def with_overrides(self, name: str, styles: Mapping[str, str]) -> "ArgonTheme":
+    def with_overrides(self, name: str, styles: Mapping[str, str]) -> ArgonTheme:
         """Return a copy with an appended override layer.
 
         @param name Override layer name.
         @param styles Semantic style updates.
         @returns New theme instance with appended layer.
         """
-
         return ArgonTheme(
             base=self.base,
             overrides=self.overrides + (ThemeLayer(name=name, styles=styles),),
@@ -202,7 +198,6 @@ class ArgonTheme:
 
         @returns Flat style mapping before reference expansion.
         """
-
         merged = dict(self.base.styles)
         for layer in self.overrides:
             merged.update(layer.styles)
@@ -214,7 +209,6 @@ class ArgonTheme:
         @returns Fully resolved style mapping.
         @raises ThemeResolutionError On missing keys, cycles, or bad references.
         """
-
         merged = self.merged_styles()
         validate_semantic_styles(merged)
         return resolve_style_references(merged)
@@ -225,7 +219,6 @@ def semantic_style_groups() -> dict[str, tuple[str, ...]]:
 
     @returns Mapping of style group names to semantic style keys.
     """
-
     return dict(SEMANTIC_STYLE_GROUPS)
 
 
@@ -235,7 +228,6 @@ def validate_semantic_styles(styles: Mapping[str, str]) -> None:
     @param styles Candidate style map.
     @raises ThemeMissingKeysError If required keys are missing.
     """
-
     missing = [key for key in SEMANTIC_STYLE_KEYS if key not in styles]
     if missing:
         raise ThemeMissingKeysError(missing)
@@ -248,7 +240,6 @@ def resolve_style_references(styles: Mapping[str, str]) -> dict[str, str]:
     @returns Resolved style mapping.
     @raises ThemeResolutionError On missing keys, cycles, or bad references.
     """
-
     resolved: dict[str, str] = {}
     visiting: list[str] = []
 
@@ -291,7 +282,6 @@ def default_styles() -> dict[str, str]:
 
     @returns Default style map including compatibility aliases.
     """
-
     return {
         "argon.surface.base": "white on black",
         "argon.surface.panel": "white on black",
@@ -359,7 +349,6 @@ def default_theme() -> ArgonTheme:
 
     @returns Default `ArgonTheme` instance.
     """
-
     return ArgonTheme(base=ThemeLayer(name="default", styles=default_styles()))
 
 
@@ -369,6 +358,5 @@ def build_theme(theme: ArgonTheme | None = None) -> Theme:
     @param theme Optional Argon theme. Uses defaults when omitted.
     @returns Rich theme object.
     """
-
     resolved = (theme or default_theme()).resolved_styles()
     return Theme(resolved)

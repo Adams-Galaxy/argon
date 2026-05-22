@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.0.1 - 2026-05-23
+
+- Improved shell usage-error display controls for resolved commands.
+- Fixed completion sequencing for consumed arguments and inline option values.
+- Added ergonomic completion sources with static values, public rich completion
+  items, default prefix filtering, and inferred string `Literal`/enum values.
+- Tightened the release toolchain with Ruff formatting/lint gates, coverage
+  reporting, package artifact validation, and supported-Python CI.
+
 ## 1.0.0 - 2026-03-05
 
 - Locked public API for `App`, `Console`, `Shell`, `Context`, parameter factories, and core exceptions.

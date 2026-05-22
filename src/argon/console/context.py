@@ -28,17 +28,17 @@ class Context:
     @param parent Optional parent context for nested invocations.
     """
 
-    app: "App"
-    console: "Console"
+    app: App
+    console: Console
     command_path: tuple[str, ...]
     args: tuple[object, ...]
     params: dict[str, object]
     raw_argv: tuple[str, ...]
     passthrough: tuple[str, ...]
-    out: "Output"
+    out: Output
     obj: object | None = None
     meta: dict[str, object] = field(default_factory=dict)
-    parent: "Context | None" = None
+    parent: Context | None = None
 
     def abort(self, message: str | None = None) -> None:
         """Abort execution immediately.
@@ -46,7 +46,6 @@ class Context:
         @param message Optional error text emitted via `ctx.out.error`.
         @raises Abort Always raises `Abort`.
         """
-
         if message:
             self.out.error(message)
         raise Abort(message or "")
@@ -57,7 +56,6 @@ class Context:
         @param code Process-like exit code.
         @raises Exit Always raises `Exit`.
         """
-
         raise Exit(code)
 
     def invoke(self, fn: Any, /, *args: Any, **kwargs: Any) -> Any:
@@ -68,7 +66,6 @@ class Context:
         @param kwargs Keyword arguments for the callable.
         @returns Callable result.
         """
-
         return self.console.invoke_callable(fn, self, args=args, kwargs=kwargs)
 
     def forward(self, fn: Any, /, **overrides: Any) -> Any:
@@ -79,5 +76,4 @@ class Context:
         @returns Callable result.
         @raises BadParameter If a forwarded parameter cannot be resolved.
         """
-
         return self.console.forward_callable(fn, self, overrides=overrides)

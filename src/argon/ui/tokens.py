@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from collections.abc import Iterable, Mapping
+from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Callable, Protocol, TypeAlias
+from typing import Protocol, TypeAlias
 
 from rich.console import RenderableType
 from rich.text import Text
@@ -52,7 +52,7 @@ class PrefixBroker:
         return self.child.get(name[len(self.prefix) :])
 
     def keys(self) -> Iterable[str]:
-        return (self.prefix + key for key in self.child.keys())
+        return (self.prefix + key for key in self.child.keys())  # noqa: SIM118
 
 
 @dataclass(frozen=True, slots=True)
@@ -69,7 +69,7 @@ class ChainBroker:
     def keys(self) -> Iterable[str]:
         seen: set[str] = set()
         for broker in self.brokers:
-            for key in broker.keys():
+            for key in broker.keys():  # noqa: SIM118
                 if key in seen:
                     continue
                 seen.add(key)

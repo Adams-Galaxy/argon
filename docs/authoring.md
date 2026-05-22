@@ -49,6 +49,30 @@ Request `argon.Context` in callback parameters to access:
 - `ctx.out` Rich-first output helpers
 - `ctx.abort()` / `ctx.exit()`
 
+## Completion
+
+Arguments and options accept static completion values or callable completion
+sources. Argon prefix-filters the returned items.
+
+```python
+@app.command()
+def release(
+    service: Annotated[
+        str,
+        argon.Argument(completion=("api", "worker", "web")),
+    ],
+    channel: Annotated[
+        Literal["stable", "preview"],
+        argon.Option("--channel", "-c"),
+    ] = "stable",
+) -> None:
+    ...
+```
+
+String `Literal` values and string-valued enums complete automatically when no
+explicit completion source is configured. Use `argon.CompletionItem` when a
+candidate needs distinct display or metadata text.
+
 ## Single-function Shortcut
 
 ```python

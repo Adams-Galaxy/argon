@@ -4,8 +4,8 @@ import pytest
 
 from argon.shell.ptk.style import build_style
 from argon.ui.theme import (
-    ArgonTheme,
     SEMANTIC_STYLE_KEYS,
+    ArgonTheme,
     ThemeCycleError,
     ThemeLayer,
     ThemeMissingKeysError,

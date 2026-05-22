@@ -51,7 +51,7 @@ def test_public_api_docstrings_use_doxygen_tags() -> None:
         argon.App.run_argv_async,
         argon.App.run_line,
         argon.App.run_line_async,
-        argon.App.run_shell,
+        argon.App.run,
         argon.Console.execute_argv,
         argon.Console.execute_argv_async,
         argon.Console.execute_line,
@@ -66,6 +66,8 @@ def test_public_api_docstrings_use_doxygen_tags() -> None:
     for target in targets:
         doc = inspect.getdoc(target)
         assert doc is not None
-        params = [param for param in inspect.signature(target).parameters.values() if param.name != "self"]
+        params = [
+            param for param in inspect.signature(target).parameters.values() if param.name != "self"
+        ]
         if params:
             assert "@param" in doc

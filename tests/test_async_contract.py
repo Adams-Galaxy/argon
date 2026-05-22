@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import asyncio
 
-import argon
 import pytest
+
+import argon
 
 
 def test_async_api_executes_command_in_running_loop() -> None:

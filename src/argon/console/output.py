@@ -105,7 +105,7 @@ class StatusDisplay(_LiveOwner):
     failed_final: str | Text = "error"
     resolved_final: str | Text | None = None
 
-    def __enter__(self) -> "StatusDisplay":
+    def __enter__(self) -> StatusDisplay:
         self.start()
         return self
 
@@ -117,7 +117,7 @@ class StatusDisplay(_LiveOwner):
             self.progress.update(self.task_id, total=1, completed=1)
         self.stop()
 
-    async def __aenter__(self) -> "StatusDisplay":
+    async def __aenter__(self) -> StatusDisplay:
         return self.__enter__()
 
     async def __aexit__(self, exc_type, exc, tb) -> None:  # type: ignore[no-untyped-def]
@@ -159,7 +159,7 @@ class ProgressDisplay(_LiveOwner):
     resolved_final: str | Text | None = None
     resolved_message: str | None = None
 
-    def __enter__(self) -> "ProgressDisplay":
+    def __enter__(self) -> ProgressDisplay:
         self.start()
         return self
 
@@ -193,7 +193,7 @@ class ProgressDisplay(_LiveOwner):
                 self.progress.update(task.id, total=total, completed=total)
 
         if final == "clear":
-            setattr(self.progress, "transient", True)
+            setattr(self.progress, "transient", True)  # noqa: B010
 
         emit_after_stop: str | None = None
         if message is not None and self.progress.tasks:
@@ -206,13 +206,15 @@ class ProgressDisplay(_LiveOwner):
         if emit_after_stop is not None:
             self.output.text(emit_after_stop, style="argon.live.message")
 
-    async def __aenter__(self) -> "ProgressDisplay":
+    async def __aenter__(self) -> ProgressDisplay:
         return self.__enter__()
 
     async def __aexit__(self, exc_type, exc, tb) -> None:  # type: ignore[no-untyped-def]
         self.__exit__(exc_type, exc, tb)
 
-    def add_task(self, description: str, *, total: float | None = None, start: bool = True) -> TaskID:
+    def add_task(
+        self, description: str, *, total: float | None = None, start: bool = True
+    ) -> TaskID:
         return self.progress.add_task(description, total=total, start=start)
 
     def advance(self, task_id: TaskID, advance: float = 1.0) -> None:
@@ -243,7 +245,9 @@ class ProgressDisplay(_LiveOwner):
             self.update(task_ids[name], completed=1)
             return name, result
 
-        results = await asyncio.gather(*(runner(name, awaitable) for name, awaitable in tasks.items()))
+        results = await asyncio.gather(
+            *(runner(name, awaitable) for name, awaitable in tasks.items())
+        )
         return dict(results)
 
 
@@ -254,16 +258,18 @@ class StageDisplay:
     description: str
     stage_names: tuple[str, ...]
 
-    def __enter__(self) -> "StageDisplay":
+    def __enter__(self) -> StageDisplay:
         self.display.__enter__()
         if self.stage_names:
-            self.display.update(self.task_id, description=f"{self.description}: {self.stage_names[0]}")
+            self.display.update(
+                self.task_id, description=f"{self.description}: {self.stage_names[0]}"
+            )
         return self
 
     def __exit__(self, exc_type, exc, tb) -> None:  # type: ignore[no-untyped-def]
         self.display.__exit__(exc_type, exc, tb)
 
-    async def __aenter__(self) -> "StageDisplay":
+    async def __aenter__(self) -> StageDisplay:
         return self.__enter__()
 
     async def __aexit__(self, exc_type, exc, tb) -> None:  # type: ignore[no-untyped-def]
@@ -280,7 +286,9 @@ class StageDisplay:
             yield stage_name
             self.display.advance(self.task_id)
 
-    async def run(self, stage_name: str, action: Callable[[], Awaitable[Any]] | Awaitable[Any]) -> Any:
+    async def run(
+        self, stage_name: str, action: Callable[[], Awaitable[Any]] | Awaitable[Any]
+    ) -> Any:
         self.display.update(self.task_id, description=f"{self.description}: {stage_name}")
         awaitable = action() if callable(action) else action
         result = await awaitable
@@ -381,9 +389,13 @@ class Output:
         resolved_show_elapsed = (
             getattr(live, "show_elapsed", True) if show_elapsed is None else show_elapsed
         )
-        resolved_final_policy = final if final is not None else getattr(live, "status_final", "success")
+        resolved_final_policy = (
+            final if final is not None else getattr(live, "status_final", "success")
+        )
         resolved_failed_policy = (
-            failed_final if failed_final is not None else getattr(live, "status_failed_final", "error")
+            failed_final
+            if failed_final is not None
+            else getattr(live, "status_failed_final", "error")
         )
         resolved_transient = transient or resolved_final_policy == "clear"
         progress = self._build_status_progress(
@@ -435,10 +447,14 @@ class Output:
         failed_final_message: str | None = None,
     ) -> ProgressDisplay:
         live = self.live_config
-        resolved_transient = getattr(live, "progress_transient", False) if transient is None else transient
+        resolved_transient = (
+            getattr(live, "progress_transient", False) if transient is None else transient
+        )
         resolved_final = final if final is not None else getattr(live, "progress_final", "leave")
         resolved_failed_final = (
-            failed_final if failed_final is not None else getattr(live, "progress_failed_final", "error")
+            failed_final
+            if failed_final is not None
+            else getattr(live, "progress_failed_final", "error")
         )
         resolved_final_message = (
             final_message
@@ -553,7 +569,9 @@ class Output:
         live = self.live_config
         resolved_final = final if final is not None else getattr(live, "awaiting_final", "clear")
         resolved_failed_final = (
-            failed_final if failed_final is not None else getattr(live, "awaiting_failed_final", "error")
+            failed_final
+            if failed_final is not None
+            else getattr(live, "awaiting_failed_final", "error")
         )
         async with self.status(
             message,

@@ -40,7 +40,7 @@ if __name__ == "__main__":
 Run the same command graph interactively:
 
 ```python
-app.run_shell()
+app.run()
 ```
 
 Or use a shell-first `main`:
@@ -51,7 +51,7 @@ import sys
 def main() -> None:
     argv = sys.argv[1:]
     if not argv:
-        app.run_shell()
+        app.run()
         return
     app.run_argv(argv)
 ```

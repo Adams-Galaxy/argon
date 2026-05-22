@@ -18,7 +18,7 @@ if TYPE_CHECKING:  # pragma: no cover
 
 @dataclass(slots=True)
 class _GroupBuilder:
-    app: "App"
+    app: App
     spec: GroupSpec
 
     def command(
@@ -39,7 +39,7 @@ class _GroupBuilder:
         help: str | None = None,
         hidden: bool = False,
         aliases: tuple[str, ...] = (),
-    ) -> "_GroupBuilder":
+    ) -> _GroupBuilder:
         return self.app._group(self.spec, name, help, hidden, aliases)
 
     def callback(
@@ -50,7 +50,7 @@ class _GroupBuilder:
     ) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
         return self.app._callback(self.spec, invoke_without_command, no_args_is_help)
 
-    def add_typer(self, app: "App", *, name: str | None = None, help: str | None = None) -> None:
+    def add_typer(self, app: App, *, name: str | None = None, help: str | None = None) -> None:
         self.app._add_typer(self.spec, app, name=name, help=help)
 
 
@@ -134,7 +134,6 @@ class App:
         @param aliases Optional alternate command names.
         @returns A decorator that registers the command callback.
         """
-
         return self._command(self.root, name, help, hidden, deprecated, aliases)
 
     def _group(
@@ -168,7 +167,6 @@ class App:
         @returns Group builder used to register nested commands/groups/callbacks.
         @raises ValueError If `name` is empty.
         """
-
         return self._group(self.root, name, help, hidden, aliases)
 
     def _callback(
@@ -200,13 +198,12 @@ class App:
         @param no_args_is_help Optional override for help-on-empty behavior.
         @returns A decorator that registers the callback.
         """
-
         return self._callback(self.root, invoke_without_command, no_args_is_help)
 
     def _add_typer(
         self,
         parent: GroupSpec,
-        app: "App",
+        app: App,
         *,
         name: str | None = None,
         help: str | None = None,
@@ -229,14 +226,13 @@ class App:
             command.parent = mounted
         parent.groups[group_name] = mounted
 
-    def add_typer(self, app: "App", *, name: str | None = None, help: str | None = None) -> None:
+    def add_typer(self, app: App, *, name: str | None = None, help: str | None = None) -> None:
         """Mount another Argon app under this app.
 
         @param app App instance to mount.
         @param name Optional mount group name.
         @param help Optional help override for the mount group.
         """
-
         self._add_typer(self.root, app, name=name, help=help)
 
     def console(self) -> Console:
@@ -244,7 +240,6 @@ class App:
 
         @returns Stable `Console` instance for execution/help/completion APIs.
         """
-
         from .console.runtime import Console
 
         if self._console_instance is None:
@@ -257,7 +252,6 @@ class App:
         @param kwargs Optional shell constructor overrides.
         @returns New `Shell` instance.
         """
-
         from .shell.run import Shell
 
         return Shell(self.console(), **kwargs)
@@ -268,7 +262,6 @@ class App:
         @param argv Argv token list. Defaults to `sys.argv[1:]`.
         @returns Command callback result or builtin/help render output.
         """
-
         return self.console().execute_argv(list(argv if argv is not None else sys.argv[1:]))
 
     async def run_argv_async(self, argv: list[str] | None = None) -> object:
@@ -277,8 +270,9 @@ class App:
         @param argv Argv token list. Defaults to `sys.argv[1:]`.
         @returns Awaited command callback result or builtin/help render output.
         """
-
-        return await self.console().execute_argv_async(list(argv if argv is not None else sys.argv[1:]))
+        return await self.console().execute_argv_async(
+            list(argv if argv is not None else sys.argv[1:])
+        )
 
     def run_line(self, line: str) -> object:
         """Execute command graph from a shell-like command line.
@@ -286,7 +280,6 @@ class App:
         @param line Command line input string.
         @returns Command callback result or builtin/help render output.
         """
-
         return self.console().execute_line(line)
 
     async def run_line_async(self, line: str) -> object:
@@ -295,22 +288,27 @@ class App:
         @param line Command line input string.
         @returns Awaited command callback result or builtin/help render output.
         """
-
         return await self.console().execute_line_async(line)
 
-    def run_shell(self, **kwargs: Any) -> int:
+    def run(self, **kwargs: Any) -> int:
         """Run the interactive shell frontend.
 
         @param kwargs Optional shell constructor overrides.
         @returns Shell exit code.
         """
-
         return self.shell(**kwargs).run()
 
-    def __call__(self) -> object:
-        """Execute this app from process argv.
+    def run_shell(self, **kwargs: Any) -> int:
+        """Run the interactive shell frontend through the v1 compatibility name.
 
-        @returns Same as `run_argv()` with default argv source.
+        @param kwargs Optional shell constructor overrides.
+        @returns Shell exit code.
         """
+        return self.run(**kwargs)
 
-        return self.run_argv()
+    def __call__(self) -> int:
+        """Syntactic sugar for `run()`, allowing the app instance to be called directly to start the shell.
+
+        @returns Shell exit code.
+        """
+        return self.run()

@@ -11,6 +11,7 @@ Argon v1 uses a versioned config schema validated by Pydantic v2.
     "history": true,
     "mouse_support": false,
     "history_path": ".argon-history",
+    "usage_error_display": "help",
     "completion": {
       "option_display": "long",
       "show_help_tooltips": false
@@ -53,3 +54,6 @@ app = argon.App(theme=config.theme, shell_config=config.shell)
 
 - `option_display`: `long | short | all | none` (default `long`)
 - `show_help_tooltips`: `bool` (default `False`)
+
+`ShellConfig.usage_error_display` controls resolved command usage errors in the
+interactive shell: `help | error | both` (default `help`).

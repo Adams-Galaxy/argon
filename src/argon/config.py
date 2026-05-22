@@ -24,14 +24,13 @@ class PromptConfig(BaseModel):
     tokens: dict[str, TokenValue | TokenFn] = Field(default_factory=dict)
 
     @classmethod
-    def from_mapping(cls, data: Mapping[str, Any] | None = None) -> "PromptConfig":
+    def from_mapping(cls, data: Mapping[str, Any] | None = None) -> PromptConfig:
         """Construct a prompt config from a mapping.
 
         @param data Mapping payload, usually decoded JSON.
         @returns Parsed prompt config.
         @raises TypeError If the payload or tokens type is invalid.
         """
-
         payload = data or {}
         if not isinstance(payload, Mapping):
             raise TypeError("Prompt config payload must be a mapping")
@@ -46,26 +45,24 @@ class PromptConfig(BaseModel):
         )
 
     @classmethod
-    def from_file(cls, path: str | Path) -> "PromptConfig":
+    def from_file(cls, path: str | Path) -> PromptConfig:
         """Load prompt config from a JSON file.
 
         @param path Path to a JSON object payload.
         @returns Parsed prompt config.
         @raises TypeError If the file does not contain a JSON object.
         """
-
         payload = json.loads(Path(path).read_text())
         if not isinstance(payload, Mapping):
             raise TypeError("Prompt config file must contain an object")
         return cls.from_mapping(payload)
 
-    def with_tokens(self, tokens: Mapping[str, TokenValue | TokenFn]) -> "PromptConfig":
+    def with_tokens(self, tokens: Mapping[str, TokenValue | TokenFn]) -> PromptConfig:
         """Return a copy with merged prompt tokens.
 
         @param tokens Additional prompt token bindings.
         @returns New prompt config with merged token map.
         """
-
         merged = dict(self.tokens)
         merged.update(tokens)
         return self.model_copy(update={"tokens": merged})
@@ -73,6 +70,7 @@ class PromptConfig(BaseModel):
 
 LiveFinishPolicy = Literal["success", "error", "clear", "leave"]
 OptionDisplayPolicy = Literal["long", "short", "all", "none"]
+UsageErrorDisplayPolicy = Literal["help", "error", "both"]
 
 
 class LiveConfig(BaseModel):
@@ -110,13 +108,12 @@ class LiveConfig(BaseModel):
     progress_failed_final_message: str | None = None
 
     @classmethod
-    def from_mapping(cls, data: Mapping[str, Any] | None = None) -> "LiveConfig":
+    def from_mapping(cls, data: Mapping[str, Any] | None = None) -> LiveConfig:
         """Construct a live config from a mapping.
 
         @param data Mapping payload, usually decoded JSON.
         @returns Parsed live config.
         """
-
         payload = data or {}
         if not isinstance(payload, Mapping):
             raise TypeError("Live config payload must be a mapping")
@@ -136,13 +133,12 @@ class CompletionConfig(BaseModel):
     show_help_tooltips: bool = False
 
     @classmethod
-    def from_mapping(cls, data: Mapping[str, Any] | None = None) -> "CompletionConfig":
+    def from_mapping(cls, data: Mapping[str, Any] | None = None) -> CompletionConfig:
         """Construct completion config from a mapping.
 
         @param data Mapping payload, usually decoded JSON.
         @returns Parsed completion config.
         """
-
         payload = data or {}
         if not isinstance(payload, Mapping):
             raise TypeError("Completion config payload must be a mapping")
@@ -155,6 +151,7 @@ class ShellConfig(BaseModel):
     @param prompt Prompt template and prompt token bindings.
     @param live Live output defaults for status and progress.
     @param completion Completion menu behavior controls.
+    @param usage_error_display Display policy for resolved command usage errors.
     @param history Whether prompt history is enabled.
     @param mouse_support Whether mouse support is enabled in PTK.
     @param history_path Optional path for persistent shell history.
@@ -165,54 +162,51 @@ class ShellConfig(BaseModel):
     prompt: PromptConfig = Field(default_factory=PromptConfig)
     live: LiveConfig = Field(default_factory=LiveConfig)
     completion: CompletionConfig = Field(default_factory=CompletionConfig)
+    usage_error_display: UsageErrorDisplayPolicy = "help"
     history: bool = True
     mouse_support: bool = False
     history_path: str | None = None
 
     @classmethod
-    def from_mapping(cls, data: Mapping[str, Any] | None = None) -> "ShellConfig":
+    def from_mapping(cls, data: Mapping[str, Any] | None = None) -> ShellConfig:
         """Construct shell config from a mapping.
 
         @param data Mapping payload, usually decoded JSON.
         @returns Parsed shell config.
         @raises TypeError If the payload is not a mapping.
         """
-
         payload = data or {}
         if not isinstance(payload, Mapping):
             raise TypeError("Shell config payload must be a mapping")
         return cls.model_validate(dict(payload))
 
     @classmethod
-    def from_file(cls, path: str | Path) -> "ShellConfig":
+    def from_file(cls, path: str | Path) -> ShellConfig:
         """Load shell config from a JSON file.
 
         @param path Path to a JSON object payload.
         @returns Parsed shell config.
         @raises TypeError If the file does not contain a JSON object.
         """
-
         payload = json.loads(Path(path).read_text())
         if not isinstance(payload, Mapping):
             raise TypeError("Shell config file must contain an object")
         return cls.from_mapping(payload)
 
-    def with_prompt(self, prompt: PromptConfig) -> "ShellConfig":
+    def with_prompt(self, prompt: PromptConfig) -> ShellConfig:
         """Return a copy with a replaced prompt config.
 
         @param prompt Prompt configuration to apply.
         @returns New shell config with updated prompt.
         """
-
         return self.model_copy(update={"prompt": prompt})
 
-    def with_prompt_tokens(self, tokens: Mapping[str, TokenValue | TokenFn]) -> "ShellConfig":
+    def with_prompt_tokens(self, tokens: Mapping[str, TokenValue | TokenFn]) -> ShellConfig:
         """Return a copy with merged prompt tokens.
 
         @param tokens Additional prompt token bindings.
         @returns New shell config with updated prompt tokens.
         """
-
         return self.with_prompt(self.prompt.with_tokens(tokens))
 
 
@@ -249,28 +243,26 @@ class AppConfig(BaseModel):
         raise TypeError("AppConfig.theme must be a mapping, ArgonTheme, or null")
 
     @classmethod
-    def from_mapping(cls, data: Mapping[str, Any] | None = None) -> "AppConfig":
+    def from_mapping(cls, data: Mapping[str, Any] | None = None) -> AppConfig:
         """Construct app config from a mapping.
 
         @param data Mapping payload, usually decoded JSON.
         @returns Parsed app config.
         @raises TypeError If the payload is not a mapping.
         """
-
         payload = data or {}
         if not isinstance(payload, Mapping):
             raise TypeError("App config payload must be a mapping")
         return cls.model_validate(dict(payload))
 
     @classmethod
-    def from_file(cls, path: str | Path) -> "AppConfig":
+    def from_file(cls, path: str | Path) -> AppConfig:
         """Load app config from a JSON file.
 
         @param path Path to a JSON object payload.
         @returns Parsed app config.
         @raises TypeError If the file does not contain a JSON object.
         """
-
         payload = json.loads(Path(path).read_text())
         if not isinstance(payload, Mapping):
             raise TypeError("App config file must contain an object")

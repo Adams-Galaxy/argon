@@ -4,7 +4,7 @@ import inspect
 from copy import deepcopy
 from typing import Annotated, Any, get_args, get_origin, get_type_hints
 
-from .models import ArgumentInfo, OptionInfo, ParamMeta, ParameterInfo, Required
+from .models import ArgumentInfo, OptionInfo, ParameterInfo, ParamMeta, Required
 
 
 class IntrospectionError(ValueError):
@@ -54,14 +54,13 @@ def get_params_from_function(func: Any) -> list[ParamMeta]:
         elif isinstance(param.default, ParameterInfo):
             parameter_info = deepcopy(param.default)
             default = parameter_info.default
-        elif is_context:
-            parameter_info = ArgumentInfo(default=Required)
-            default = Required
-        elif param.default is inspect._empty:
+        elif is_context or param.default is inspect._empty:
             parameter_info = ArgumentInfo(default=Required)
             default = Required
         else:
-            parameter_info = OptionInfo(default=param.default, param_decls=_infer_option_decl(param.name))
+            parameter_info = OptionInfo(
+                default=param.default, param_decls=_infer_option_decl(param.name)
+            )
             default = param.default
 
         if isinstance(parameter_info, OptionInfo) and not parameter_info.param_decls:

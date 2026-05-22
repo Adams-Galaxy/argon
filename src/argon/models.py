@@ -3,21 +3,35 @@ from __future__ import annotations
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 from inspect import _ParameterKind
-from typing import Any
+from typing import Any, TypeAlias
 
 
 class _RequiredSentinel:
     def __repr__(self) -> str:
         return "Required"
 
-    def __copy__(self) -> "_RequiredSentinel":
+    def __copy__(self) -> _RequiredSentinel:
         return self
 
-    def __deepcopy__(self, memo: dict[int, object]) -> "_RequiredSentinel":
+    def __deepcopy__(self, memo: dict[int, object]) -> _RequiredSentinel:
         return self
 
 
 Required = _RequiredSentinel()
+
+
+@dataclass(frozen=True, slots=True)
+class CompletionItem:
+    """Rich completion suggestion with optional display and metadata text."""
+
+    text: str
+    display: str | None = None
+    meta: str | None = None
+
+
+CompletionValue: TypeAlias = str | CompletionItem
+CompletionItems: TypeAlias = Sequence[CompletionValue]
+CompletionSource: TypeAlias = CompletionItems | Callable[..., CompletionItems]
 
 
 @dataclass(slots=True)
@@ -28,7 +42,7 @@ class ParameterInfo:
     metavar: str | None = None
     envvar: str | list[str] | None = None
     parser: Callable[[str], Any] | None = None
-    autocompletion: Callable[..., Sequence[str | "CompletionItem"]] | None = None
+    autocompletion: CompletionSource | None = None
     default_factory: Callable[[], Any] | None = None
     hidden: bool = False
     required: bool = False
@@ -125,13 +139,6 @@ class Invocation:
     args: tuple[object, ...]
     options: dict[str, object]
     passthrough: tuple[str, ...] = ()
-
-
-@dataclass(frozen=True, slots=True)
-class CompletionItem:
-    text: str
-    display: str | None = None
-    meta: str | None = None
 
 
 @dataclass(frozen=True, slots=True)

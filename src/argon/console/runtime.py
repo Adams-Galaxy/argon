@@ -85,7 +85,6 @@ class Console:
 
         @returns Context manager yielding this console with terminal-bound output handles.
         """
-
         previous_console = self.rich_console
         previous_ansi_console = self.formatter.ansi_console
         forced_console = build_console(theme=self.app.theme, force_terminal=True)
@@ -129,12 +128,16 @@ class Console:
             if group.callback is not None:
                 finalize_result_sync(self.invoke_callable(group.callback, ctx, args=(), kwargs={}))
 
-    async def _invoke_group_callbacks_async(self, groups: tuple[GroupSpec, ...], ctx: Context) -> None:
+    async def _invoke_group_callbacks_async(
+        self, groups: tuple[GroupSpec, ...], ctx: Context
+    ) -> None:
         from .dispatch import finalize_result_async
 
         for group in groups:
             if group.callback is not None:
-                await finalize_result_async(self.invoke_callable(group.callback, ctx, args=(), kwargs={}))
+                await finalize_result_async(
+                    self.invoke_callable(group.callback, ctx, args=(), kwargs={})
+                )
 
     def _render_help(self, resolution) -> object:
         if resolution.command is not None:
@@ -147,9 +150,33 @@ class Console:
         @param path Command/group path tokens.
         @returns Rich renderable help object.
         """
-
         resolution = resolve(self.root, list(path))
         return self._render_help(resolution)
+
+    def render_shell_error(self, line: str, error: Exception) -> None:
+        """Render an exception raised while executing a shell line.
+
+        @param line Shell input that raised the exception.
+        @param error Raised exception.
+        """
+        if not isinstance(error, UsageError):
+            self.output.error(str(error))
+            return
+
+        try:
+            resolution = resolve(self.root, split_line(line))
+        except UsageError:
+            self.output.error(str(error))
+            return
+        if resolution.command is None:
+            self.output.error(str(error))
+            return
+
+        display = self.app.shell_config.usage_error_display
+        if display in {"error", "both"}:
+            self.output.error(str(error))
+        if display in {"help", "both"}:
+            self.output.rich(self._render_help(resolution))
 
     def _handle_builtin(self, argv: list[str]) -> object | None:
         if argv and argv[0] == "help":
@@ -172,7 +199,6 @@ class Console:
         @returns Command callback result or builtin/help render output.
         @raises UsageError On parse/usage failures.
         """
-
         builtin = self._handle_builtin(argv)
         if builtin is not None:
             return builtin
@@ -205,11 +231,9 @@ class Console:
                     out=self.output,
                     meta=self.meta,
                 )
-                return finalize_result_sync(self.invoke_callable(group.callback, empty_ctx, args=(), kwargs={}))
-            if not resolution.path and self.root.no_args_is_help:
-                help_renderable = self.help()
-                self.output.rich(help_renderable)
-                return help_renderable
+                return finalize_result_sync(
+                    self.invoke_callable(group.callback, empty_ctx, args=(), kwargs={})
+                )
             raise UsageError(f"Unknown command: {' '.join(argv)}")
 
         parsed = parse_tokens(resolution.command, list(resolution.remaining))
@@ -224,7 +248,6 @@ class Console:
         @returns Command callback result or builtin/help render output.
         @raises UsageError On split/parse/usage failures.
         """
-
         tokens = split_line(line)
         return self.execute_argv(tokens)
 
@@ -235,7 +258,6 @@ class Console:
         @returns Awaited command callback result or builtin/help render output.
         @raises UsageError On parse/usage failures.
         """
-
         from .dispatch import finalize_result_async
 
         builtin = self._handle_builtin(argv)
@@ -273,10 +295,6 @@ class Console:
                 return await finalize_result_async(
                     self.invoke_callable(group.callback, empty_ctx, args=(), kwargs={})
                 )
-            if not resolution.path and self.root.no_args_is_help:
-                help_renderable = self.help()
-                self.output.rich(help_renderable)
-                return help_renderable
             raise UsageError(f"Unknown command: {' '.join(argv)}")
 
         parsed = parse_tokens(resolution.command, list(resolution.remaining))
@@ -291,7 +309,6 @@ class Console:
         @returns Awaited command callback result or builtin/help render output.
         @raises UsageError On split/parse/usage failures.
         """
-
         tokens = split_line(line)
         return await self.execute_argv_async(tokens)
 
@@ -302,7 +319,6 @@ class Console:
         @param cursor Cursor position within the line.
         @returns Completion result with items and replacement span.
         """
-
         return complete(
             self.root,
             line,
@@ -317,10 +333,11 @@ class Console:
         @param line Full input line.
         @returns Semantic styled spans with source offsets.
         """
-
         return highlight(self.root, line)
 
-    def invoke_callable(self, fn: Any, ctx: Context, *, args: tuple[Any, ...], kwargs: dict[str, Any]) -> Any:
+    def invoke_callable(
+        self, fn: Any, ctx: Context, *, args: tuple[Any, ...], kwargs: dict[str, Any]
+    ) -> Any:
         return invoke_callable(fn, ctx, args=args, kwargs=kwargs)
 
     def forward_callable(self, fn: Any, ctx: Context, *, overrides: dict[str, Any]) -> Any:

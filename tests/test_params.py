@@ -26,3 +26,25 @@ def test_option_factory_supports_required_and_envvar() -> None:
 def test_argument_factory_supports_envvar() -> None:
     info = argon.Argument(envvar=["USER_NAME", "USER"])
     assert info.envvar == ["USER_NAME", "USER"]
+
+
+def test_completion_item_is_public() -> None:
+    item = argon.CompletionItem("prod", display="production", meta="Primary")
+    assert item.text == "prod"
+    assert item.display == "production"
+    assert item.meta == "Primary"
+
+
+def test_completion_keeps_autocompletion_alias() -> None:
+    source = ("prod",)
+    assert argon.Option(autocompletion=source).autocompletion is source
+    assert argon.Argument(autocompletion=source).autocompletion is source
+
+
+def test_completion_aliases_are_mutually_exclusive() -> None:
+    try:
+        argon.Option(completion=("prod",), autocompletion=("preview",))
+    except ValueError as exc:
+        assert str(exc) == "Use either completion or autocompletion, not both"
+    else:  # pragma: no cover
+        raise AssertionError("expected completion alias conflict")

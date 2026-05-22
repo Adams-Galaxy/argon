@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass, field
-from typing import Mapping
 
 from rich.console import Console, RenderableType
 from rich.text import Text
@@ -21,7 +21,9 @@ class Formatter:
     def broker(self) -> TokenBroker:
         if not self._layers:
             return self.base_broker
-        return ChainBroker(tuple(StaticBroker(layer) for layer in self._layers) + (self.base_broker,))
+        return ChainBroker(
+            tuple(StaticBroker(layer) for layer in self._layers) + (self.base_broker,)
+        )
 
     def push_layer(self) -> None:
         self._layers.insert(0, {})

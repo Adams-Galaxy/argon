@@ -21,7 +21,6 @@ def run(
     @param version Optional app version string.
     @returns Command callback result.
     """
-
     app = App(name=name or getattr(fn, "__name__", "app"), help=help, version=version)
     command_name = getattr(fn, "__name__", "main").replace("_", "-")
     app.command(name=command_name, help=help)(fn)

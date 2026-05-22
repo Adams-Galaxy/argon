@@ -33,8 +33,12 @@ class Shell:
         shell_config = self.console.app.shell_config
         history_enabled = shell_config.history if self.history is None else self.history
         prompt_template = shell_config.prompt.template if self.prompt is None else self.prompt
-        prompt_tokens = shell_config.prompt.tokens if self.prompt_tokens is None else self.prompt_tokens
-        history_path = self.history_path if self.history_path is not None else shell_config.history_path
+        prompt_tokens = (
+            shell_config.prompt.tokens if self.prompt_tokens is None else self.prompt_tokens
+        )
+        history_path = (
+            self.history_path if self.history_path is not None else shell_config.history_path
+        )
         resolved_history = Path(history_path) if history_enabled and history_path else None
         self.history = history_enabled
         self.mouse_support = (
@@ -51,7 +55,6 @@ class Shell:
 
         @returns Shell exit code.
         """
-
         with self.console.terminal_output():
             try:
                 from .ptk.repl import run_ptk_repl
@@ -74,5 +77,5 @@ class Shell:
             try:
                 self.console.execute_line(line)
             except Exception as exc:  # noqa: BLE001
-                self.console.output.error(str(exc))
+                self.console.render_shell_error(line, exc)
         return 0

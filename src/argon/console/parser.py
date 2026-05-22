@@ -144,13 +144,13 @@ def _resolve_default(param: ParamMeta) -> object:
 
 
 def parse_tokens(command: CommandSpec, tokens: list[str]) -> ParseResult:
-    option_params = [param for param in command.visible_params if isinstance(param.parameter_info, OptionInfo)]
-    argument_params = [param for param in command.visible_params if isinstance(param.parameter_info, ArgumentInfo)]
-    option_by_name = {
-        name: param
-        for param in option_params
-        for name in _option_names(param)
-    }
+    option_params = [
+        param for param in command.visible_params if isinstance(param.parameter_info, OptionInfo)
+    ]
+    argument_params = [
+        param for param in command.visible_params if isinstance(param.parameter_info, ArgumentInfo)
+    ]
+    option_by_name = {name: param for param in option_params for name in _option_names(param)}
 
     argv, passthrough = split_passthrough(tokens)
     option_values: dict[str, list[str]] = {}
@@ -223,7 +223,11 @@ def parse_tokens(command: CommandSpec, tokens: list[str]) -> ParseResult:
             path=command.path,
             argv=tuple(tokens),
             args=tuple(bound_args),
-            options={name: value for name, value in values.items() if name in {param.name for param in option_params}},
+            options={
+                name: value
+                for name, value in values.items()
+                if name in {param.name for param in option_params}
+            },
             passthrough=tuple(passthrough),
         ),
         values=values,
