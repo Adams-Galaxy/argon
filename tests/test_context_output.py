@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import asyncio
 
+from rich.text import Text
+
 import argon
 
 
@@ -23,6 +25,85 @@ def test_context_output_methods_render(capsys) -> None:
     assert "warn" in out
     assert "err" in out
     assert "name: Ada" in out
+
+
+def test_context_exposes_input_surface() -> None:
+    app = argon.App(name="demo")
+    keys = iter(["\x1b", "[", "A"])
+
+    app.console().input.key_source = lambda timeout: next(keys, None)
+
+    @app.command()
+    def read(ctx: argon.Context) -> tuple[str | None, bool]:
+        return ctx.input.read_key(), ctx.inp is ctx.input
+
+    assert app.run_argv(["read"]) == ("up", True)
+
+
+def test_context_exposes_output_alias() -> None:
+    app = argon.App(name="demo")
+
+    @app.command()
+    def show(ctx: argon.Context) -> bool:
+        ctx.output.text("hello")
+        return ctx.output is ctx.out
+
+    assert app.run_argv(["show"]) is True
+
+
+def test_context_keeps_input_compatibility_alias() -> None:
+    app = argon.App(name="demo")
+
+    @app.command()
+    def show(ctx: argon.Context) -> bool:
+        return ctx.in_ is ctx.input
+
+    assert app.run_argv(["show"]) is True
+
+
+def test_input_wait_key_returns_none_when_not_interactive() -> None:
+    assert argon.Input().wait_key(timeout=0) is None
+
+
+def test_input_sleep_can_be_stopped_by_key() -> None:
+    app = argon.App(name="demo")
+    keys = iter(["q"])
+    app.console().input.key_source = lambda timeout: next(keys, None)
+
+    @app.command()
+    async def wait(ctx: argon.Context) -> str | None:
+        return await ctx.input.sleep(10, stop_keys={"q"})
+
+    assert app.run_argv(["wait"]) == "q"
+
+
+def test_context_output_live_wraps_rich_live(capsys) -> None:
+    app = argon.App(name="demo")
+
+    @app.command()
+    def view(ctx: argon.Context) -> None:
+        with ctx.out.live(Text("first"), transient=False) as live:
+            live.update(Text("second"), refresh=True)
+
+    app.run_argv(["view"])
+    out = capsys.readouterr().out
+    assert "second" in out
+
+
+def test_context_output_live_uses_nested_live_guard() -> None:
+    app = argon.App(name="demo")
+
+    @app.command()
+    def nested(ctx: argon.Context) -> str:
+        with ctx.out.live(Text("outer")):
+            try:
+                with ctx.out.status("inner"):
+                    pass
+            except argon.LiveDisplayError as exc:
+                return str(exc)
+        return "no error"
+
+    assert app.run_argv(["nested"]) == "Another live display is already active"
 
 
 def test_context_forward_and_invoke() -> None:

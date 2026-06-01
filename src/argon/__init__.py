@@ -4,6 +4,7 @@ from .app import App
 from .config import AppConfig, CompletionConfig, LiveConfig, PromptConfig, ShellConfig
 from .console.context import Context
 from .console.errors import Abort, ArgonError, BadParameter, Exit, UsageError
+from .console.input import Input, KeyReader
 from .console.output import LiveDisplayError
 from .console.runtime import Console
 from .models import CompletionItem
@@ -26,6 +27,8 @@ __all__ = [
     "Context",
     "default_theme",
     "Exit",
+    "Input",
+    "KeyReader",
     "LiveConfig",
     "LiveDisplayError",
     "Option",

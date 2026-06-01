@@ -2,6 +2,7 @@
 
 from .context import Context
 from .errors import Abort, ArgonError, BadParameter, Exit, UsageError
+from .input import Input, KeyReader
 from .runtime import Console
 
 __all__ = [
@@ -11,5 +12,7 @@ __all__ = [
     "Console",
     "Context",
     "Exit",
+    "Input",
+    "KeyReader",
     "UsageError",
 ]

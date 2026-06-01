@@ -74,7 +74,7 @@ DEMO_SHELL_CONFIG = argon.ShellConfig(
 app = App(
     name="argon-demo",
     help="Shell-first reference app showing the intended Argon authoring flow.",
-    version="1.0.1",
+    version="1.0.2",
     theme=DEMO_THEME,
     no_args_is_help=True,
     shell_config=DEMO_SHELL_CONFIG,
@@ -89,7 +89,7 @@ def root(ctx: Context) -> None:
 
 @app.command(help="Show the current shell session state")
 def status(ctx: Context) -> None:
-    ctx.out.kv(
+    ctx.output.kv(
         "Session",
         {
             "app": ctx.app.name,
@@ -114,7 +114,7 @@ def greet(
     if loud:
         message = message.upper()
     for _ in range(times):
-        ctx.out.text(message)
+        ctx.output.text(message)
     return message
 
 
@@ -124,7 +124,7 @@ workspace = app.group("workspace", help="Workspace-oriented commands")
 @workspace.callback(invoke_without_command=True)
 def workspace_root(ctx: Context) -> None:
     if ctx.command_path == ("workspace",):
-        ctx.out.text("Use `workspace use <name>` to set shell context.")
+        ctx.output.text("Use `workspace use <name>` to set shell context.")
 
 
 @workspace.command(help="Switch to a workspace")
@@ -138,7 +138,7 @@ def use(
 ) -> None:
     ctx.meta["profile"] = profile
     ctx.meta["workspace"] = name
-    ctx.out.success(f"Workspace {name} active on {profile}")
+    ctx.output.success(f"Workspace {name} active on {profile}")
 
 
 @app.command(help="Release one service with concurrent async preparation")
@@ -150,17 +150,17 @@ async def release(
         Option("--channel", "-c", help="Release channel"),
     ] = "stable",
 ) -> dict[str, str]:
-    results = await ctx.out.gather(
+    results = await ctx.output.gather(
         {
             "build": asyncio.sleep(0.02, result="ready"),
             "package": asyncio.sleep(0.03, result="ready"),
         }
     )
-    results["publish"] = await ctx.out.awaiting(
+    results["publish"] = await ctx.output.awaiting(
         asyncio.sleep(0.02, result="done"),
         message=f"Publishing {service}",
     )
-    ctx.out.kv(
+    ctx.output.kv(
         "Release",
         {
             "service": service,
@@ -170,6 +170,22 @@ async def release(
         },
     )
     return results
+
+
+@app.command(help="Show a key-interruptible live renderable")
+async def monitor(
+    ctx: Context,
+    once: Annotated[bool, Option("--once", help="Render one frame and exit")] = False,
+) -> str:
+    with ctx.output.live(Text("monitor: starting", style="argon.live.message")) as live:
+        live.update(Text("monitor: ready", style="argon.live.message"), refresh=True)
+        if once:
+            return "ready"
+
+        key = await ctx.input.wait_key_async({"q", " "})
+        state = "stopped by space" if key == " " else f"stopped by {key}"
+        live.update(Text(f"monitor: {state}", style="argon.live.message"), refresh=True)
+        return state
 
 
 def main() -> None:

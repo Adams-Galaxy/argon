@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.0.2 - 2026-06-01
+
+- Added `ctx.input` and `ctx.inp` for prompt, key, and interruptible sleep flows.
+- Added `ctx.output` as the long-form output surface while keeping `ctx.out`.
+- Added guarded `ctx.output.live()` for custom Rich live renderables.
+- Released prompt_toolkit terminal input mode while shell commands run so command
+  key handling can own arrows and other terminal input.
+- Updated the reference demo to exercise the new input/live APIs.
+
 ## 1.0.1 - 2026-05-23
 
 - Improved shell usage-error display controls for resolved commands.

@@ -10,6 +10,8 @@ def test_public_exports() -> None:
     assert "AppConfig" in argon.__all__
     assert "CompletionConfig" in argon.__all__
     assert "CompletionItem" in argon.__all__
+    assert "Input" in argon.__all__
+    assert "KeyReader" in argon.__all__
     assert "LiveDisplayError" in argon.__all__
     assert "LiveConfig" in argon.__all__
     assert "Shell" in argon.__all__

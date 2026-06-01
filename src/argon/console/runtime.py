@@ -27,6 +27,7 @@ from .dispatch import (
 from .errors import UsageError
 from .help import render_command_help, render_group_help
 from .highlighting import highlight
+from .input import Input
 from .output import Output
 from .parser import parse_tokens, split_line
 from .registry import resolve
@@ -42,6 +43,7 @@ class Console:
     app: Any
     rich_console: Any = field(init=False)
     output: Output = field(init=False)
+    input: Input = field(init=False)
     formatter: Formatter = field(init=False)
     meta: dict[str, object] = field(default_factory=dict)
 
@@ -58,6 +60,7 @@ class Console:
             ui_console=self.rich_console,
             live_config=self.app.shell_config.live,
         )
+        self.input = Input()
         self.formatter = Formatter(
             base_broker=ChainBroker(
                 (
@@ -119,6 +122,7 @@ class Console:
             raw_argv=result.invocation.argv,
             passthrough=result.invocation.passthrough,
             out=self.output,
+            input=self.input,
             meta=self.meta,
             parent=parent,
         )
@@ -229,6 +233,7 @@ class Console:
                     raw_argv=tuple(argv),
                     passthrough=(),
                     out=self.output,
+                    input=self.input,
                     meta=self.meta,
                 )
                 return finalize_result_sync(
@@ -290,6 +295,7 @@ class Console:
                     raw_argv=tuple(argv),
                     passthrough=(),
                     out=self.output,
+                    input=self.input,
                     meta=self.meta,
                 )
                 return await finalize_result_async(

@@ -7,6 +7,14 @@ from .lexer import make_lexer
 from .style import build_style
 
 
+def _execute_line_with_terminal_released(ptk, console, line: str) -> None:
+    with ptk.app.input.cooked_mode():
+        try:
+            console.execute_line(line)
+        except Exception as exc:  # noqa: BLE001
+            console.render_shell_error(line, exc)
+
+
 def run_ptk_repl(console, session, *, mouse_support: bool = False) -> int:
     from prompt_toolkit import PromptSession
     from prompt_toolkit.formatted_text import ANSI
@@ -32,7 +40,4 @@ def run_ptk_repl(console, session, *, mouse_support: bool = False) -> int:
         if not line.strip():
             continue
         session.history.append(line)
-        try:
-            console.execute_line(line)
-        except Exception as exc:  # noqa: BLE001
-            console.render_shell_error(line, exc)
+        _execute_line_with_terminal_released(ptk, console, line)

@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 from typing import Any, cast
 
 from rich.console import RenderableType
+from rich.live import Live
 from rich.panel import Panel
 from rich.progress import BarColumn, Progress, ProgressColumn, SpinnerColumn, Task, TextColumn
 from rich.rule import Rule
@@ -252,6 +253,32 @@ class ProgressDisplay(_LiveOwner):
 
 
 @dataclass(slots=True)
+class LiveDisplay:
+    output: Output
+    renderable: RenderableType
+    live: Live
+    claimed: bool = False
+
+    def __enter__(self) -> LiveDisplay:
+        self.output._claim_live(self)
+        self.claimed = True
+        self.live.start()
+        return self
+
+    def __exit__(self, exc_type, exc, tb) -> None:  # type: ignore[no-untyped-def]
+        try:
+            self.live.stop()
+        finally:
+            if self.claimed:
+                self.output._release_live(self)
+                self.claimed = False
+
+    def update(self, renderable: RenderableType, *, refresh: bool = False) -> None:
+        self.renderable = renderable
+        self.live.update(renderable, refresh=refresh)
+
+
+@dataclass(slots=True)
 class StageDisplay:
     display: ProgressDisplay
     task_id: TaskID
@@ -326,6 +353,34 @@ class Output:
 
     def rich(self, renderable: object) -> None:
         self._emit(renderable)
+
+    def live(
+        self,
+        renderable: RenderableType,
+        *,
+        refresh_per_second: float = 12.0,
+        transient: bool = False,
+        auto_refresh: bool = True,
+        screen: bool = False,
+    ) -> LiveDisplay:
+        """Create a guarded Rich live display.
+
+        @param renderable Initial renderable.
+        @param refresh_per_second Maximum refresh rate.
+        @param transient Whether to clear the live display on exit.
+        @param auto_refresh Whether Rich should refresh automatically.
+        @param screen Whether to use an alternate screen.
+        @returns Live display context manager.
+        """
+        live = Live(
+            renderable,
+            console=self.ui_console,
+            refresh_per_second=refresh_per_second,
+            transient=transient,
+            auto_refresh=auto_refresh,
+            screen=screen,
+        )
+        return LiveDisplay(output=self, renderable=renderable, live=live)
 
     def error(self, message: str) -> None:
         self._emit(Text(message, style="argon.error"))

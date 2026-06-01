@@ -7,6 +7,7 @@ from .errors import Abort, Exit
 
 if TYPE_CHECKING:  # pragma: no cover
     from ..app import App
+    from .input import Input
     from .output import Output
     from .runtime import Console
 
@@ -23,6 +24,7 @@ class Context:
     @param raw_argv Raw argv tokens for this command invocation.
     @param passthrough Tokens after `--` passthrough separator.
     @param out Output helper surface.
+    @param input Input helper surface.
     @param obj Optional user object slot.
     @param meta Mutable context metadata dictionary.
     @param parent Optional parent context for nested invocations.
@@ -36,9 +38,25 @@ class Context:
     raw_argv: tuple[str, ...]
     passthrough: tuple[str, ...]
     out: Output
+    input: Input
     obj: object | None = None
     meta: dict[str, object] = field(default_factory=dict)
     parent: Context | None = None
+
+    @property
+    def output(self) -> Output:
+        """Long-form alias for `out`."""
+        return self.out
+
+    @property
+    def inp(self) -> Input:
+        """Short alias for `input`."""
+        return self.input
+
+    @property
+    def in_(self) -> Input:
+        """Compatibility alias for `input`; prefer `inp` for short form."""
+        return self.input
 
     def abort(self, message: str | None = None) -> None:
         """Abort execution immediately.

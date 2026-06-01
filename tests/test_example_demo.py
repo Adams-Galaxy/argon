@@ -66,3 +66,24 @@ def test_demo_release_runs_async_live_output(capsys) -> None:
     assert "Release" in out
     assert "api" in out
     assert "preview" in out
+
+
+def test_demo_monitor_uses_output_live(capsys) -> None:
+    result = app.run_argv(["monitor", "--once"])
+    out = capsys.readouterr().out
+    assert result == "ready"
+    assert "monitor: ready" in out
+
+
+def test_demo_monitor_can_be_stopped_by_input_key(capsys) -> None:
+    keys = iter(["q"])
+    previous_source = app.console().input.key_source
+    app.console().input.key_source = lambda timeout: next(keys, None)
+    try:
+        result = app.run_argv(["monitor"])
+    finally:
+        app.console().input.key_source = previous_source
+
+    out = capsys.readouterr().out
+    assert result == "stopped by q"
+    assert "monitor: stopped by q" in out

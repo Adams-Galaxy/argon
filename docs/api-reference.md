@@ -17,6 +17,8 @@ from argon import (
     LiveConfig,
     CompletionConfig,
     CompletionItem,
+    Input,
+    KeyReader,
     ArgonTheme,
     ThemeLayer,
     default_theme,
@@ -48,9 +50,16 @@ from argon import (
 ## Context
 
 - execution metadata: `command_path`, `args`, `params`, `raw_argv`, `passthrough`
-- output: `ctx.out`
+- output: `ctx.output` (`ctx.out` alias)
+- input: `ctx.input` (`ctx.inp` alias)
 - control flow: `abort()`, `exit()`
 - command composition: `invoke()`, `forward()`
+
+## Input
+
+- line prompts: `prompt()`, `prompt_async()`
+- keys: `keys()`, `read_key()`, `wait_key()`, `wait_key_async()`
+- interruptible async sleeps: `sleep()`
 
 ## Config Models
 
