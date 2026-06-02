@@ -199,12 +199,23 @@ class Input:
         @param interval Polling interval.
         @returns The matching key, or `None` when timed out or non-interactive.
         """
-        return await asyncio.to_thread(
-            self.wait_key,
-            keys,
-            timeout=timeout,
-            interval=interval,
-        )
+        if not self.interactive and self.key_source is None:
+            return None
+        accepted = set(keys) if keys is not None else None
+        deadline = None if timeout is None else time.monotonic() + timeout
+        with self.keys() as reader:
+            while deadline is None or time.monotonic() < deadline:
+                key = reader.read_key(0)
+                if key is not None and (accepted is None or key in accepted):
+                    return key
+                if deadline is None:
+                    sleep_for = interval
+                else:
+                    sleep_for = min(interval, max(0.0, deadline - time.monotonic()))
+                if sleep_for <= 0:
+                    break
+                await asyncio.sleep(sleep_for)
+        return None
 
     async def sleep(
         self,

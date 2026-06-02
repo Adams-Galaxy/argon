@@ -24,7 +24,7 @@ from .dispatch import (
     invoke_command,
     invoke_command_async,
 )
-from .errors import UsageError
+from .errors import Interrupted, UsageError
 from .help import render_command_help, render_group_help
 from .highlighting import highlight
 from .input import Input
@@ -157,12 +157,19 @@ class Console:
         resolution = resolve(self.root, list(path))
         return self._render_help(resolution)
 
+    def render_shell_interrupt(self) -> None:
+        """Render a user interrupt in an interactive shell."""
+        self.output.warning("Interrupted")
+
     def render_shell_error(self, line: str, error: Exception) -> None:
         """Render an exception raised while executing a shell line.
 
         @param line Shell input that raised the exception.
         @param error Raised exception.
         """
+        if isinstance(error, Interrupted):
+            self.render_shell_interrupt()
+            return
         if not isinstance(error, UsageError):
             self.output.error(str(error))
             return

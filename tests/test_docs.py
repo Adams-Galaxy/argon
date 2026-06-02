@@ -52,6 +52,8 @@ def test_public_api_docstrings_use_doxygen_tags() -> None:
         argon.App.run_line,
         argon.App.run_line_async,
         argon.App.run,
+        argon.App.run_async,
+        argon.App.run_shell_async,
         argon.Console.execute_argv,
         argon.Console.execute_argv_async,
         argon.Console.execute_line,

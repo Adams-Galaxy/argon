@@ -17,6 +17,10 @@ class Abort(ArgonError):
     """Raised when execution should terminate early."""
 
 
+class Interrupted(ArgonError):
+    """Raised when execution is interrupted by the user."""
+
+
 class Exit(ArgonError):
     """Raised to exit with a specific code."""
 

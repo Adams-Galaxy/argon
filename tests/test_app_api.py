@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from typing import Annotated
 
 import argon
@@ -11,6 +12,7 @@ def test_public_exports() -> None:
     assert "CompletionConfig" in argon.__all__
     assert "CompletionItem" in argon.__all__
     assert "Input" in argon.__all__
+    assert "Interrupted" in argon.__all__
     assert "KeyReader" in argon.__all__
     assert "LiveDisplayError" in argon.__all__
     assert "LiveConfig" in argon.__all__
@@ -54,6 +56,42 @@ def test_run_shell_keeps_v1_compatibility_name(monkeypatch) -> None:
     assert app.run_shell() == 7
 
 
+def test_run_async_uses_async_shell(monkeypatch) -> None:
+    app = argon.App(name="demo")
+    called = {"value": False}
+
+    async def fake_run_async() -> int:
+        called["value"] = True
+        return 7
+
+    class FakeShell:
+        async def run_async(self) -> int:
+            return await fake_run_async()
+
+    shell = FakeShell()
+    monkeypatch.setattr(app, "shell", lambda **kwargs: shell)
+
+    async def runner() -> int:
+        return await app.run_async()
+
+    assert asyncio.run(runner()) == 7
+    assert called["value"] is True
+
+
+def test_run_shell_async_keeps_v1_compatibility_name(monkeypatch) -> None:
+    app = argon.App(name="demo")
+
+    async def fake_run_async() -> int:
+        return 7
+
+    monkeypatch.setattr(app, "run_async", fake_run_async)
+
+    async def runner() -> int:
+        return await app.run_shell_async()
+
+    assert asyncio.run(runner()) == 7
+
+
 def test_run_single_function_shortcut(monkeypatch) -> None:
     def main(name: Annotated[str, argon.Argument(help="Name")]) -> str:
         return name
@@ -69,5 +107,8 @@ def test_app_console_is_stable_instance(demo_app: argon.App) -> None:
 def test_async_methods_exist_on_public_api(demo_app: argon.App) -> None:
     assert hasattr(demo_app, "run_argv_async")
     assert hasattr(demo_app, "run_line_async")
+    assert hasattr(demo_app, "run_async")
+    assert hasattr(demo_app, "run_shell_async")
+    assert hasattr(demo_app.shell(), "run_async")
     assert hasattr(demo_app.console(), "execute_argv_async")
     assert hasattr(demo_app.console(), "execute_line_async")

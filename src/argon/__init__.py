@@ -3,7 +3,7 @@
 from .app import App
 from .config import AppConfig, CompletionConfig, LiveConfig, PromptConfig, ShellConfig
 from .console.context import Context
-from .console.errors import Abort, ArgonError, BadParameter, Exit, UsageError
+from .console.errors import Abort, ArgonError, BadParameter, Exit, Interrupted, UsageError
 from .console.input import Input, KeyReader
 from .console.output import LiveDisplayError
 from .console.runtime import Console
@@ -28,6 +28,7 @@ __all__ = [
     "default_theme",
     "Exit",
     "Input",
+    "Interrupted",
     "KeyReader",
     "LiveConfig",
     "LiveDisplayError",

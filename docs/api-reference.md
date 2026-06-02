@@ -25,6 +25,7 @@ from argon import (
     semantic_style_groups,
     Abort,
     Exit,
+    Interrupted,
     BadParameter,
     UsageError,
     ArgonError,
@@ -38,8 +39,9 @@ from argon import (
 - backend access: `console()`
 - shell access: `shell()`, `run()`, `run_shell()`
 - sync execution: `run_argv()`, `run_line()`
-- shell shortcut: `__call__()`
 - async execution: `run_argv_async()`, `run_line_async()`
+- async shell: `run_async()`, `run_shell_async()`
+- shell shortcut: `__call__()`
 
 ## Console
 
@@ -54,6 +56,12 @@ from argon import (
 - input: `ctx.input` (`ctx.inp` alias)
 - control flow: `abort()`, `exit()`
 - command composition: `invoke()`, `forward()`
+
+## Interrupts
+
+- `KeyboardInterrupt` and async cancellation inside command execution are normalized to `Interrupted`.
+- Interactive shells render `Interrupted` and keep the shell open.
+- Programmatic APIs (`run_argv()`, `run_line()`, async variants, and `Console` execution methods) raise `Interrupted` so callers can choose their own shutdown behavior.
 
 ## Input
 

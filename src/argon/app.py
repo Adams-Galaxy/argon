@@ -298,6 +298,14 @@ class App:
         """
         return self.shell(**kwargs).run()
 
+    async def run_async(self, **kwargs: Any) -> int:
+        """Run the interactive shell frontend inside an existing event loop.
+
+        @param kwargs Optional shell constructor overrides.
+        @returns Shell exit code.
+        """
+        return await self.shell(**kwargs).run_async()
+
     def run_shell(self, **kwargs: Any) -> int:
         """Run the interactive shell frontend through the v1 compatibility name.
 
@@ -305,6 +313,14 @@ class App:
         @returns Shell exit code.
         """
         return self.run(**kwargs)
+
+    async def run_shell_async(self, **kwargs: Any) -> int:
+        """Run the interactive shell frontend asynchronously through the shell compatibility name.
+
+        @param kwargs Optional shell constructor overrides.
+        @returns Shell exit code.
+        """
+        return await self.run_async(**kwargs)
 
     def __call__(self) -> int:
         """Syntactic sugar for `run()`, allowing the app instance to be called directly to start the shell.

@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import asyncio
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from ..console.errors import Interrupted
 from ..ui.tokens import TokenFn, TokenValue
 from .session import ShellSession
 
@@ -62,6 +64,22 @@ class Shell:
                 return self._run_basic()
             return run_ptk_repl(self.console, self.session, mouse_support=bool(self.mouse_support))
 
+    async def run_async(self) -> int:
+        """Run the shell prompt loop inside an existing event loop.
+
+        @returns Shell exit code.
+        """
+        with self.console.terminal_output():
+            try:
+                from .ptk.repl import run_ptk_repl_async
+            except Exception:  # noqa: BLE001
+                return await self._run_basic_async()
+            return await run_ptk_repl_async(
+                self.console,
+                self.session,
+                mouse_support=bool(self.mouse_support),
+            )
+
     def _run_basic(self) -> int:
         while True:
             try:
@@ -76,6 +94,28 @@ class Shell:
                 continue
             try:
                 self.console.execute_line(line)
+            except (Interrupted, KeyboardInterrupt):
+                self.console.render_shell_interrupt()
+            except Exception as exc:  # noqa: BLE001
+                self.console.render_shell_error(line, exc)
+        return 0
+
+    async def _run_basic_async(self) -> int:
+        while True:
+            try:
+                prompt = self.console.formatter.render_ansi(
+                    self.session.prompt,
+                    extra=self.session.prompt_tokens,
+                )
+                line = await asyncio.to_thread(input, prompt)
+            except (EOFError, KeyboardInterrupt):
+                return 0
+            if not line.strip():
+                continue
+            try:
+                await self.console.execute_line_async(line)
+            except (Interrupted, KeyboardInterrupt):
+                self.console.render_shell_interrupt()
             except Exception as exc:  # noqa: BLE001
                 self.console.render_shell_error(line, exc)
         return 0

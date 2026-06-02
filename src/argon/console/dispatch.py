@@ -8,7 +8,11 @@ from typing import Any, cast
 from ..introspect import get_params_from_function
 from ..models import CommandSpec, ParamMeta
 from .context import Context
-from .errors import BadParameter, UsageError
+from .errors import BadParameter, Interrupted, UsageError
+
+
+def _interrupted() -> Interrupted:
+    return Interrupted("Interrupted")
 
 
 def finalize_result_sync(result: Any) -> Any:
@@ -19,7 +23,10 @@ def finalize_result_sync(result: Any) -> Any:
     try:
         asyncio.get_running_loop()
     except RuntimeError:
-        return asyncio.run(cast(Coroutine[Any, Any, Any], result))
+        try:
+            return asyncio.run(cast(Coroutine[Any, Any, Any], result))
+        except (asyncio.CancelledError, KeyboardInterrupt) as exc:
+            raise _interrupted() from exc
     if inspect.iscoroutine(result):
         result.close()
     raise UsageError(
@@ -30,7 +37,10 @@ def finalize_result_sync(result: Any) -> Any:
 
 async def finalize_result_async(result: Any) -> Any:
     if inspect.isawaitable(result):
-        return await result
+        try:
+            return await result
+        except (asyncio.CancelledError, KeyboardInterrupt) as exc:
+            raise _interrupted() from exc
     return result
 
 
@@ -65,14 +75,22 @@ def _build_call(
 
 def invoke_command(command: CommandSpec, ctx: Context, values: dict[str, object]) -> Any:
     args, kwargs = _build_call(command.params, ctx, values)
-    return finalize_result_sync(command.callback(*args, **kwargs))
+    try:
+        result = command.callback(*args, **kwargs)
+    except (asyncio.CancelledError, KeyboardInterrupt) as exc:
+        raise _interrupted() from exc
+    return finalize_result_sync(result)
 
 
 async def invoke_command_async(
     command: CommandSpec, ctx: Context, values: dict[str, object]
 ) -> Any:
     args, kwargs = _build_call(command.params, ctx, values)
-    return await finalize_result_async(command.callback(*args, **kwargs))
+    try:
+        result = command.callback(*args, **kwargs)
+    except (asyncio.CancelledError, KeyboardInterrupt) as exc:
+        raise _interrupted() from exc
+    return await finalize_result_async(result)
 
 
 def invoke_callable(fn: Any, ctx: Context, *, args: tuple[Any, ...], kwargs: dict[str, Any]) -> Any:
@@ -87,7 +105,10 @@ def invoke_callable(fn: Any, ctx: Context, *, args: tuple[Any, ...], kwargs: dic
         else:
             call_kwargs[param.name] = ctx
         break
-    return fn(*call_args, **call_kwargs)
+    try:
+        return fn(*call_args, **call_kwargs)
+    except (asyncio.CancelledError, KeyboardInterrupt) as exc:
+        raise _interrupted() from exc
 
 
 def forward_callable(fn: Any, ctx: Context, *, overrides: dict[str, Any]) -> Any:
@@ -114,4 +135,7 @@ def forward_callable(fn: Any, ctx: Context, *, overrides: dict[str, Any]) -> Any
             call_args.extend(value if isinstance(value, tuple) else (value,))
         else:
             call_kwargs[param.name] = value
-    return fn(*call_args, **call_kwargs)
+    try:
+        return fn(*call_args, **call_kwargs)
+    except (asyncio.CancelledError, KeyboardInterrupt) as exc:
+        raise _interrupted() from exc

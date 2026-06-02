@@ -77,6 +77,37 @@ def test_input_sleep_can_be_stopped_by_key() -> None:
     assert app.run_argv(["wait"]) == "q"
 
 
+def test_input_wait_key_async_does_not_use_thread(monkeypatch) -> None:
+    inp = argon.Input(key_source=lambda timeout: "q")
+
+    async def fail_to_thread(*args, **kwargs) -> None:  # type: ignore[no-untyped-def]
+        del args, kwargs
+        raise AssertionError("wait_key_async should not use asyncio.to_thread")
+
+    monkeypatch.setattr(asyncio, "to_thread", fail_to_thread)
+
+    async def runner() -> str | None:
+        return await inp.wait_key_async({"q"})
+
+    assert asyncio.run(runner()) == "q"
+
+
+def test_input_wait_key_async_is_cancellable() -> None:
+    inp = argon.Input(key_source=lambda timeout: None)
+
+    async def runner() -> bool:
+        task = asyncio.create_task(inp.wait_key_async({"q"}, interval=0.01))
+        await asyncio.sleep(0)
+        task.cancel()
+        try:
+            await task
+        except asyncio.CancelledError:
+            return True
+        return False
+
+    assert asyncio.run(runner()) is True
+
+
 def test_context_output_live_wraps_rich_live(capsys) -> None:
     app = argon.App(name="demo")
 
