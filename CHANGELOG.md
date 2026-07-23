@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.0.3 - 2026-07-24
+
+- Added async interactive-shell entry points through `App.run_async()`,
+  `App.run_shell_async()`, and `Shell.run_async()`.
+- Added a prompt_toolkit async prompt loop for applications embedded in an
+  active event loop.
+- Normalized command interruption across synchronous and asynchronous
+  execution paths.
+- Expanded async shell, prompt, interruption, and public API regression tests.
+
 ## 1.0.2 - 2026-06-01
 
 - Added `ctx.input` and `ctx.inp` for prompt, key, and interruptible sleep flows.

@@ -8,7 +8,7 @@ terminal UX as a first-class runtime concern.
 
 ## Status
 
-Argon v1.0.2 is the current stable release.
+Argon v1.0.3 is the current stable release.
 
 Public docs start at [`docs/index.md`](docs/index.md).
 
