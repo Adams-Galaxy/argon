@@ -10,10 +10,12 @@ from .theme import ArgonTheme, build_theme
 def build_console(
     *,
     theme: ArgonTheme | None = None,
-    force_terminal: bool = False,
+    force_terminal: bool | None = None,
     width: int | None = None,
 ) -> Console:
-    color_system: Literal["standard", "auto"] = "standard" if force_terminal else "auto"
+    color_system: Literal["standard", "auto"] = (
+        "standard" if force_terminal is True else "auto"
+    )
     return Console(
         theme=build_theme(theme),
         highlight=False,

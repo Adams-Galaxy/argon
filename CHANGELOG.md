@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.4 - 2026-07-26
+
+- Restored Rich's automatic terminal detection for one-shot command output.
+- Preserved explicitly forced terminal rendering for interactive shell and ANSI
+  formatting paths.
+- Added regression coverage for styled output on an automatically detected TTY.
+
 ## 1.0.3 - 2026-07-24
 
 - Added async interactive-shell entry points through `App.run_async()`,

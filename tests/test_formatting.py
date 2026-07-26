@@ -1,11 +1,32 @@
 from __future__ import annotations
 
+import io
+import sys
+
 from rich.text import Text
 
 from argon.ui.formatter import Formatter
 from argon.ui.rich_console import build_console
 from argon.ui.template import render, render_ansi
 from argon.ui.tokens import PrefixBroker, StaticBroker, build_system_broker
+
+
+class _TerminalBuffer(io.StringIO):
+    def isatty(self) -> bool:
+        return True
+
+
+def test_console_auto_detects_terminal_color(monkeypatch) -> None:
+    output = _TerminalBuffer()
+    monkeypatch.setattr(sys, "stdout", output)
+    monkeypatch.setenv("TERM", "xterm-256color")
+    monkeypatch.delenv("NO_COLOR", raising=False)
+
+    console = build_console()
+    console.print(Text("notice", style="bold green"))
+
+    assert console.is_terminal is True
+    assert "\x1b[" in output.getvalue()
 
 
 def test_template_render_plain_token() -> None:
